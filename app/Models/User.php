@@ -18,9 +18,13 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
+        'phone',
+        'country_code',
+        'profile_picture',
     ];
 
     /**
@@ -44,5 +48,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+    public function mainAddress()
+    {
+        return $this->hasOne(Address::class)->where('is_main', true);
+    }
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'user_categories');
+    }
+    public function artistDetails()
+    {
+        return $this->hasOne(ArtistDetail::class);
     }
 }
