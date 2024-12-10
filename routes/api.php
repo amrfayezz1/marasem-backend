@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\RegisterController;
 
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
+Route::post('/send-otp', [LoginController::class, 'sendOtp']);
+Route::post('/reset-password', [LoginController::class, 'resetPassword']);
 
 // group with sanctum
 Route::group(['middleware' => 'auth:sanctum'], function () {
