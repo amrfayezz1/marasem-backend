@@ -18,6 +18,9 @@ class SocialLoginController extends Controller
     public function handleProviderCallback($provider)
     {
         \Log::info('Provider: ' . $provider);
+        if ($provider == "behance") {
+            $provider = "adobe";
+        }
         try {
             $socialUser = Socialite::driver($provider)->stateless()->user();
 

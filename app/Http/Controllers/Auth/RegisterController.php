@@ -108,18 +108,8 @@ class RegisterController extends Controller
     public function addCategories(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'category_ids' => 'required|array',
-            'category_ids.*' => [
-                'exists:categories,id',  // Ensure each category_id exists in the 'categories' table
-                function ($attribute, $value, $fail) {
-                    $category = \App\Models\Category::find($value);
-
-                    // Ensure the category has a parent (i.e., it is a sub-category)
-                    if ($category && $category->parent_id === null) {
-                        return $fail('The selected category must be a sub-category with a parent.');
-                    }
-                },
-            ],
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
         ]);
 
         $user = $request->user();
@@ -135,12 +125,12 @@ class RegisterController extends Controller
             ], 422);
         }
 
-        $categoryIds = $validated->validated()['category_ids'];
+        $tagIds = $validated->validated()['tags'];
 
         // Attach the categories to the user
-        foreach ($categoryIds as $categoryId) {
+        foreach ($tagIds as $tagId) {
             // Assuming the user has a 'categories' relationship defined
-            $user->categories()->attach($categoryId);
+            $user->tags()->attach($tagId);
         }
 
         // Update the artist's registration step

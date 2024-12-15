@@ -53,7 +53,7 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URL'),
     ],
 
-    'behance' => [
+    'adobe' => [
         'client_id' => env('BEHANCE_CLIENT_ID'),
         'client_secret' => env('BEHANCE_CLIENT_SECRET'),
         'redirect' => env('BEHANCE_REDIRECT_URL'),

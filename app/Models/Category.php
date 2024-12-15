@@ -9,21 +9,13 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'super_category_id'];
+    protected $fillable = ['name'];
 
     /**
-     * Get the super category for this category.
+     * Get the tags associated with the category.
      */
-    public function superCategory()
+    public function tags()
     {
-        return $this->belongsTo(Category::class, 'super_category_id');
-    }
-
-    /**
-     * Get the subcategories for this category.
-     */
-    public function subCategories()
-    {
-        return $this->hasMany(Category::class, 'super_category_id');
+        return $this->hasMany(Tag::class);
     }
 }

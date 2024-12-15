@@ -59,12 +59,18 @@ class User extends Authenticatable
     {
         return $this->hasOne(Address::class)->where('is_main', true);
     }
-    public function categories()
+    public function tags()
     {
-        return $this->belongsToMany(Category::class, 'user_categories');
+        return $this->belongsToMany(Tag::class, 'user_tags');
     }
+
     public function artistDetails()
     {
         return $this->hasOne(ArtistDetail::class);
+    }
+
+    public function artworks()
+    {
+        return $this->hasMany(Artwork::class, 'artist_id');
     }
 }
