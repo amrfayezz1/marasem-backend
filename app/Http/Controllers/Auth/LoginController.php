@@ -24,6 +24,54 @@ class LoginController extends Controller
         $this->twilioService = $twilioService;
     }
 
+    /**
+     * @OA\Post(
+     *     path="/login",
+     *     summary="Login user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"password"},
+     *             @OA\Property(property="email", type="string", format="email", nullable=true, example="john.doe@example.com"),
+     *             @OA\Property(property="phone", type="string", nullable=true, example="1234567890", description="Required if email is not provided."),
+     *             @OA\Property(property="country_code", type="string", nullable=true, example="+1", description="Required if using phone for login."),
+     *             @OA\Property(property="password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="remember", type="boolean", nullable=true, example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Login successful."),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe")
+     *             ),
+     *             @OA\Property(property="token", type="string", example="sample-jwt-token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Invalid credentials")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -67,6 +115,22 @@ class LoginController extends Controller
         return response()->json(['error' => 'Invalid credentials'], 401);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/logout",
+     *     summary="Logout user",
+     *     tags={"Authentication"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Logged out successfully.")
+     *         )
+     *     )
+     * )
+     */
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -74,6 +138,39 @@ class LoginController extends Controller
         return response()->json(['message' => 'Logged out successfully.']);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/send-otp",
+     *     summary="Send OTP to email or phone",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"identifier", "type"},
+     *             @OA\Property(property="identifier", type="string", example="john.doe@example.com", description="Email or phone number."),
+     *             @OA\Property(property="type", type="string", enum={"email", "phone"}, example="email", description="Specify the type of identifier."),
+     *             @OA\Property(property="country_code", type="string", nullable=true, example="+1", description="Required if type is phone.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP sent successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="OTP sent successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No account found"
+     *     )
+     * )
+     */
     public function sendOtp(Request $request)
     {
         $validated = Validator::make($request->all(), [
@@ -138,6 +235,62 @@ class LoginController extends Controller
         return response()->json(['message' => 'OTP sent successfully.']);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/reset-password",
+     *     summary="Reset password using OTP",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"identifier", "type", "otp", "new_password"},
+     *             @OA\Property(property="identifier", type="string", example="john.doe@example.com", description="Email or phone number."),
+     *             @OA\Property(property="type", type="string", enum={"email", "phone"}, example="email", description="Specify the type of identifier."),
+     *             @OA\Property(property="country_code", type="string", nullable=true, example="+1", description="Required if type is phone."),
+     *             @OA\Property(property="otp", type="string", example="1234", description="4-digit OTP sent to email or phone."),
+     *             @OA\Property(property="new_password", type="string", format="password", minLength=8, example="newPassword123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Password reset successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Password reset successful."),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe")
+     *             ),
+     *             @OA\Property(property="token", type="string", example="sample-jwt-token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid OTP",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Invalid OTP")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="OTP expired"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function resetPassword(Request $request)
     {
         // Validation for OTP and new password

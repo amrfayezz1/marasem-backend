@@ -4,8 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\ArtworkController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\ArtworkController;
 
 // auth
 Route::post('/register', [RegisterController::class, 'register']);
@@ -15,11 +15,6 @@ Route::post('/reset-password', [LoginController::class, 'resetPassword']);
 
 // group with sanctum
 Route::group(['middleware' => 'auth:sanctum'], function () {
-    // registration as artist
-    Route::post('/add-social-media-links', [RegisterController::class, 'addSocialMediaLinks']);
-    Route::get('/get-categories', [RegisterController::class, 'getCategories']);
-    Route::post('/choose-categories', [RegisterController::class, 'addCategories']);
-    Route::post('/add-pickup-location', [RegisterController::class, 'addPickupLocation']);
     Route::post('/add-address', [AddressController::class, 'store']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
@@ -35,4 +30,9 @@ Route::middleware(['auth:sanctum', 'can:is-artist'])->group(function () {
     // adding artwork
     Route::get('/collections-tags', [ArtworkController::class, 'getCollectionsAndTags']);
     Route::post('/artworks', [ArtworkController::class, 'createArtwork']);
+    // registration as artist
+    Route::post('/add-social-media-links', [RegisterController::class, 'addSocialMediaLinks']);
+    Route::get('/get-categories', [RegisterController::class, 'getCategories']);
+    Route::post('/choose-categories', [RegisterController::class, 'addCategories']);
+    Route::post('/add-pickup-location', [RegisterController::class, 'addPickupLocation']);
 });

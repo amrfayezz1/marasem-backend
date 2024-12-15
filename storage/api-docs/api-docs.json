@@ -1,0 +1,1588 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Marasem API",
+        "description": "This API supports social media login with Google, Facebook, and Behance. Users are redirected to the provider's login page and upon successful authentication, they are logged into the app and issued a token.",
+        "contact": {
+            "email": "amrfayez.247@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Local development server for API routes"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local development server for Web routes"
+        },
+        {
+            "url": "/api"
+        }
+    ],
+    "paths": {
+        "/add-address": {
+            "post": {
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Add a new address for the authenticated user",
+                "operationId": "6b5169034a08e2084b2ad42035275e1c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "city",
+                                    "zone",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "city": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Cairo"
+                                    },
+                                    "zone": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Downtown"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "123 Main St"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John's Office",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "+1234567890",
+                                        "nullable": true
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "maxLength": 5,
+                                        "example": "+20",
+                                        "nullable": true
+                                    },
+                                    "is_default": {
+                                        "description": "Set as default address",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Address created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "city": {
+                                            "type": "string",
+                                            "example": "Cairo"
+                                        },
+                                        "zone": {
+                                            "type": "string",
+                                            "example": "Downtown"
+                                        },
+                                        "address": {
+                                            "type": "string",
+                                            "example": "123 Main St"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "John's Office",
+                                            "nullable": true
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+1234567890",
+                                            "nullable": true
+                                        },
+                                        "country_code": {
+                                            "type": "string",
+                                            "example": "+20",
+                                            "nullable": true
+                                        },
+                                        "is_default": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "user_id": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artworks": {
+            "get": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Fetch artworks with pagination and liked status",
+                "operationId": "723644476e25a2bb0ffe3780decd0c2a",
+                "parameters": [
+                    {
+                        "name": "artwork_id",
+                        "in": "query",
+                        "description": "ID of a specific artwork to fetch",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Pagination offset (default is 0)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Pagination limit (default is 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of artworks",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "has_more": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artwork not found"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Create a new artwork",
+                "operationId": "79114af6408f58c1bad3e8c613dd7c78",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "art_type",
+                                    "artwork_status",
+                                    "sizes",
+                                    "prices",
+                                    "description",
+                                    "customizable"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Sunset Painting"
+                                    },
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "art_type": {
+                                        "type": "string",
+                                        "example": "Painting"
+                                    },
+                                    "artwork_status": {
+                                        "type": "string",
+                                        "example": "Available"
+                                    },
+                                    "sizes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "24x36"
+                                        }
+                                    },
+                                    "prices": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 200.5
+                                        }
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "A beautiful sunset painting."
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "collections": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "customizable": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "duration": {
+                                        "description": "Required if customizable is true",
+                                        "type": "string",
+                                        "example": "7 days",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Artwork created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artwork created successfully."
+                                        },
+                                        "artwork": {
+                                            "$ref": "#/components/schemas/Artwork"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sizes and prices mismatch or other validation error"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/collections-tags": {
+            "get": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Get collections and tags with their usage count",
+                "operationId": "a8fec9535fa7beb6555d12f92932569d",
+                "responses": {
+                    "200": {
+                        "description": "Collections and tags fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "collections": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Collection"
+                                            }
+                                        },
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Tag"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artworks/{id}/like": {
+            "post": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Like an artwork",
+                "operationId": "9dac56176d45662d8cd950437949f633",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artwork to like",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Artwork liked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liked successfully"
+                                        },
+                                        "likes_count": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artwork not found"
+                    },
+                    "400": {
+                        "description": "Already liked"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Unlike an artwork",
+                "operationId": "579ce77e802dcd12914013b29dc9fd3a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artwork to unlike",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artwork unliked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unliked successfully"
+                                        },
+                                        "likes_count": {
+                                            "type": "integer",
+                                            "example": 4
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artwork or like not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login user",
+                "operationId": "a0bad38435a32b5ad173da486ba8f59d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "description": "Required if email is not provided.",
+                                        "type": "string",
+                                        "example": "1234567890",
+                                        "nullable": true
+                                    },
+                                    "country_code": {
+                                        "description": "Required if using phone for login.",
+                                        "type": "string",
+                                        "example": "+1",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "remember": {
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john.doe@example.com"
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "sample-jwt-token"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "operationId": "fe1c1eca634ba2811908fec5e5183950",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logged out successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/send-otp": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Send OTP to email or phone",
+                "operationId": "14eabb74326c85de388f1c3d87debf91",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identifier",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "identifier": {
+                                        "description": "Email or phone number.",
+                                        "type": "string",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "type": {
+                                        "description": "Specify the type of identifier.",
+                                        "type": "string",
+                                        "enum": [
+                                            "email",
+                                            "phone"
+                                        ],
+                                        "example": "email"
+                                    },
+                                    "country_code": {
+                                        "description": "Required if type is phone.",
+                                        "type": "string",
+                                        "example": "+1",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    },
+                    "404": {
+                        "description": "No account found"
+                    }
+                }
+            }
+        },
+        "/reset-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Reset password using OTP",
+                "operationId": "cd2ee5226ba78b28b93c3c61467c92e6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "identifier",
+                                    "type",
+                                    "otp",
+                                    "new_password"
+                                ],
+                                "properties": {
+                                    "identifier": {
+                                        "description": "Email or phone number.",
+                                        "type": "string",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "type": {
+                                        "description": "Specify the type of identifier.",
+                                        "type": "string",
+                                        "enum": [
+                                            "email",
+                                            "phone"
+                                        ],
+                                        "example": "email"
+                                    },
+                                    "country_code": {
+                                        "description": "Required if type is phone.",
+                                        "type": "string",
+                                        "example": "+1",
+                                        "nullable": true
+                                    },
+                                    "otp": {
+                                        "description": "4-digit OTP sent to email or phone.",
+                                        "type": "string",
+                                        "example": "1234"
+                                    },
+                                    "new_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8,
+                                        "example": "newPassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Password reset successful."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john.doe@example.com"
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "sample-jwt-token"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid OTP",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid OTP"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found"
+                    },
+                    "400": {
+                        "description": "OTP expired"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Register a new user",
+                "operationId": "6cb93c5db517a3e6e369c44ede7f22fd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "password",
+                                    "phone",
+                                    "country_code"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "maxLength": 255,
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8,
+                                        "example": "password123"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{7,15}$",
+                                        "example": "1234567890"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "pattern": "^\\\\+\\\\d{1,4}$",
+                                        "example": "+1"
+                                    },
+                                    "is_artist": {
+                                        "description": "Optional. Indicates if the user is an artist.",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User registered successfully."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john.doe@example.com"
+                                                },
+                                                "is_artist": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "sample-jwt-token"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/add-social-media-links": {
+            "post": {
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Add social media links for the user",
+                "operationId": "a070cfba95e6efb697a1069f08f780d9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "social_media_link",
+                                    "portfolio_link"
+                                ],
+                                "properties": {
+                                    "social_media_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://twitter.com/user"
+                                    },
+                                    "portfolio_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://portfolio.com/user"
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://website.com",
+                                        "nullable": true
+                                    },
+                                    "other_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://other.com",
+                                        "nullable": true
+                                    },
+                                    "summary": {
+                                        "type": "string",
+                                        "example": "Artist specialized in digital art.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Social media links added successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Social media links added successfully."
+                                        },
+                                        "artistDetail": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid step"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/get-categories": {
+            "get": {
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Fetch all categories",
+                "operationId": "57cfce92ed141d7357bb852d3598e931",
+                "responses": {
+                    "200": {
+                        "description": "List of categories",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Painting"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/choose-categories": {
+            "post": {
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Choose categories for the user",
+                "operationId": "325241fc9fceca51db665c07af5ece56",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categories chosen successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categories chosen successfully."
+                                        },
+                                        "artistDetail": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid step"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/add-pickup-location": {
+            "post": {
+                "tags": [
+                    "Registration"
+                ],
+                "summary": "Add pickup location for the user",
+                "operationId": "f9798fadfab322baff88a81928d1043c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "city",
+                                    "zone",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Cairo"
+                                    },
+                                    "zone": {
+                                        "type": "string",
+                                        "example": "Downtown"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main St, Cairo"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pickup location added successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pickup location added successfully."
+                                        },
+                                        "artistDetail": {
+                                            "type": "object"
+                                        },
+                                        "address": {
+                                            "properties": {
+                                                "city": {
+                                                    "type": "string",
+                                                    "example": "Cairo"
+                                                },
+                                                "zone": {
+                                                    "type": "string",
+                                                    "example": "Downtown"
+                                                },
+                                                "address": {
+                                                    "type": "string",
+                                                    "example": "123 Main St, Cairo"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid step"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/login/{provider}/redirect": {
+            "get": {
+                "tags": [
+                    "Social Login"
+                ],
+                "summary": "Redirect to social login provider",
+                "operationId": "0db6ac4ad0df425956924f486b7afd0e",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The social login provider (e.g., google, facebook, behance)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "google",
+                                "facebook",
+                                "behance"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirects the user to the social provider's login page"
+                    },
+                    "500": {
+                        "description": "Error in redirecting to provider"
+                    }
+                }
+            }
+        },
+        "/login/{provider}/callback": {
+            "get": {
+                "tags": [
+                    "Social Login"
+                ],
+                "summary": "Handle the social login callback",
+                "operationId": "a9987d83816b7917eaaa6edf08d91dd6",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The social login provider (e.g., google, facebook, behance)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "google",
+                                "facebook",
+                                "behance"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful."
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "sample-jwt-token"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No account found with this email",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "No account found with this email."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Unable to login"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "required": [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone",
+                    "country_code"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the user",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "first_name": {
+                        "description": "The user's first name",
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "last_name": {
+                        "description": "The user's last name",
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "description": "The user's email address",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "phone": {
+                        "description": "The user's phone number",
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "country_code": {
+                        "description": "The country code of the user's phone number",
+                        "type": "string",
+                        "example": "+1"
+                    },
+                    "profile_picture": {
+                        "description": "URL to the user's profile picture",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/profile.jpg",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the user was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-01-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the user was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-01-10T15:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Artwork": {
+                "required": [
+                    "id",
+                    "name",
+                    "artist_id",
+                    "photos",
+                    "art_type",
+                    "artwork_status",
+                    "sizes_prices",
+                    "description"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "artist_id": {
+                        "description": "The ID of the artist who created the artwork",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "name": {
+                        "description": "The name of the artwork",
+                        "type": "string",
+                        "example": "Beautiful Landscape"
+                    },
+                    "photos": {
+                        "description": "Photos of the artwork",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "https://example.com/image1.jpg"
+                        }
+                    },
+                    "art_type": {
+                        "description": "The type of art",
+                        "type": "string",
+                        "example": "Painting"
+                    },
+                    "artwork_status": {
+                        "description": "The status of the artwork (e.g., Available, Sold)",
+                        "type": "string",
+                        "example": "Available"
+                    },
+                    "sizes_prices": {
+                        "description": "Sizes and prices for the artwork",
+                        "type": "object",
+                        "example": {
+                            "24x36": 200.5,
+                            "30x40": 300.75
+                        }
+                    },
+                    "description": {
+                        "description": "Description of the artwork",
+                        "type": "string",
+                        "example": "A stunning depiction of a serene landscape."
+                    },
+                    "customizable": {
+                        "description": "Indicates if the artwork is customizable",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "duration": {
+                        "description": "The duration required for customization, if applicable",
+                        "type": "string",
+                        "example": "7 days",
+                        "nullable": true
+                    },
+                    "likes_count": {
+                        "description": "The number of likes for the artwork",
+                        "type": "integer",
+                        "example": 15
+                    }
+                },
+                "type": "object"
+            },
+            "Collection": {
+                "required": [
+                    "id",
+                    "title",
+                    "tags",
+                    "followers"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The ID of the collection",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "description": "The title of the collection",
+                        "type": "string",
+                        "example": "Nature Collection"
+                    },
+                    "tags": {
+                        "description": "Tags associated with the collection",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "Landscape"
+                        }
+                    },
+                    "followers": {
+                        "description": "Number of followers of the collection",
+                        "type": "integer",
+                        "example": 200
+                    }
+                },
+                "type": "object"
+            },
+            "Tag": {
+                "required": [
+                    "id",
+                    "name",
+                    "category_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The ID of the tag",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "The name of the tag",
+                        "type": "string",
+                        "example": "Landscape"
+                    },
+                    "category_id": {
+                        "description": "The ID of the category the tag belongs to",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the tag was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-01-01T00:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the tag was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-01-01T00:00:00Z"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Use your Bearer token to access secured endpoints.",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Address",
+            "description": "Address"
+        },
+        {
+            "name": "Artworks",
+            "description": "Artworks"
+        },
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Registration",
+            "description": "Registration"
+        },
+        {
+            "name": "Social Login",
+            "description": "Social Login"
+        }
+    ]
+}

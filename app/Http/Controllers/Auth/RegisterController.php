@@ -12,6 +12,53 @@ use App\Http\Controllers\Controller;
 
 class RegisterController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/register",
+     *     summary="Register a new user",
+     *     tags={"Registration"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"first_name", "last_name", "email", "password", "phone", "country_code"},
+     *             @OA\Property(property="first_name", type="string", maxLength=255, example="John"),
+     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe"),
+     *             @OA\Property(property="email", type="string", format="email", maxLength=255, example="john.doe@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", minLength=8, example="password123"),
+     *             @OA\Property(property="phone", type="string", pattern="^[0-9]{7,15}$", example="1234567890"),
+     *             @OA\Property(property="country_code", type="string", pattern="^\\+\\d{1,4}$", example="+1"),
+     *             @OA\Property(property="is_artist", type="boolean", nullable=true, example=true, description="Optional. Indicates if the user is an artist.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="User registered successfully."),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john.doe@example.com"),
+     *                 @OA\Property(property="is_artist", type="boolean", example=true)
+     *             ),
+     *             @OA\Property(property="token", type="string", example="sample-jwt-token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -67,6 +114,43 @@ class RegisterController extends Controller
     }
 
     // Step 2: Handle social media links
+    /**
+     * @OA\Post(
+     *     path="/add-social-media-links",
+     *     summary="Add social media links for the user",
+     *     tags={"Registration"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"social_media_link", "portfolio_link"},
+     *             @OA\Property(property="social_media_link", type="string", format="url", example="https://twitter.com/user"),
+     *             @OA\Property(property="portfolio_link", type="string", format="url", example="https://portfolio.com/user"),
+     *             @OA\Property(property="website_link", type="string", format="url", nullable=true, example="https://website.com"),
+     *             @OA\Property(property="other_link", type="string", format="url", nullable=true, example="https://other.com"),
+     *             @OA\Property(property="summary", type="string", nullable=true, example="Artist specialized in digital art.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Social media links added successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Social media links added successfully."),
+     *             @OA\Property(property="artistDetail", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid step"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function addSocialMediaLinks(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -105,6 +189,30 @@ class RegisterController extends Controller
     }
 
     // Step 3.1: Get all categories
+    /**
+     * @OA\Get(
+     *     path="/get-categories",
+     *     summary="Fetch all categories",
+     *     tags={"Registration"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of categories",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="categories",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Painting")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function getCategories()
     {
         $categories = \App\Models\Tag::all();
@@ -113,6 +221,42 @@ class RegisterController extends Controller
         ]);
     }
     // Step 3.2: Choose categories
+    /**
+     * @OA\Post(
+     *     path="/choose-categories",
+     *     summary="Choose categories for the user",
+     *     tags={"Registration"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="tags",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=1)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories chosen successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Categories chosen successfully."),
+     *             @OA\Property(property="artistDetail", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid step"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function addCategories(Request $request)
     {
         $validated = Validator::make($request->all(), [
@@ -153,6 +297,48 @@ class RegisterController extends Controller
     }
 
     // Step 4: Add pickup location
+    /**
+     * @OA\Post(
+     *     path="/add-pickup-location",
+     *     summary="Add pickup location for the user",
+     *     tags={"Registration"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"city", "zone", "address"},
+     *             @OA\Property(property="city", type="string", example="Cairo"),
+     *             @OA\Property(property="zone", type="string", example="Downtown"),
+     *             @OA\Property(property="address", type="string", example="123 Main St, Cairo")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pickup location added successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Pickup location added successfully."),
+     *             @OA\Property(property="artistDetail", type="object"),
+     *             @OA\Property(
+     *                 property="address",
+     *                 type="object",
+     *                 @OA\Property(property="city", type="string", example="Cairo"),
+     *                 @OA\Property(property="zone", type="string", example="Downtown"),
+     *                 @OA\Property(property="address", type="string", example="123 Main St, Cairo")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid step"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function addPickupLocation(Request $request)
     {
         $validator = Validator::make($request->all(), [

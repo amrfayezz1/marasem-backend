@@ -10,11 +10,69 @@ use Laravel\Socialite\Facades\Socialite;
 
 class SocialLoginController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/login/{provider}/redirect",
+     *     summary="Redirect to social login provider",
+     *     tags={"Social Login"},
+     *     @OA\Parameter(
+     *         name="provider",
+     *         in="path",
+     *         required=true,
+     *         description="The social login provider (e.g., google, facebook, behance)",
+     *         @OA\Schema(type="string", enum={"google", "facebook", "behance"})
+     *     ),
+     *     @OA\Response(
+     *         response=302,
+     *         description="Redirects the user to the social provider's login page"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error in redirecting to provider"
+     *     )
+     * )
+     */
     public function redirectToProvider($provider)
     {
         return Socialite::driver($provider)->redirect();
     }
 
+    /**
+     * @OA\Get(
+     *     path="/login/{provider}/callback",
+     *     summary="Handle the social login callback",
+     *     tags={"Social Login"},
+     *     @OA\Parameter(
+     *         name="provider",
+     *         in="path",
+     *         required=true,
+     *         description="The social login provider (e.g., google, facebook, behance)",
+     *         @OA\Schema(type="string", enum={"google", "facebook", "behance"})
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Login successful."),
+     *             @OA\Property(property="user", type="object", ref="#/components/schemas/User"),
+     *             @OA\Property(property="token", type="string", example="sample-jwt-token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No account found with this email",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="No account found with this email.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Unable to login"
+     *     )
+     * )
+     */
     public function handleProviderCallback($provider)
     {
         \Log::info('Provider: ' . $provider);

@@ -14,6 +14,47 @@ use App\Models\ArtworkLike;
 
 class ArtworkController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/artworks",
+     *     summary="Fetch artworks with pagination and liked status",
+     *     tags={"Artworks"},
+     *     @OA\Parameter(
+     *         name="artwork_id",
+     *         in="query",
+     *         required=false,
+     *         description="ID of a specific artwork to fetch",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="offset",
+     *         in="query",
+     *         required=false,
+     *         description="Pagination offset (default is 0)",
+     *         @OA\Schema(type="integer", example=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         required=false,
+     *         description="Pagination limit (default is 10)",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of artworks",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="artworks", type="array", @OA\Items(ref="#/components/schemas/Artwork")),
+     *             @OA\Property(property="has_more", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork not found"
+     *     )
+     * )
+     */
     public function fetchArtworks(Request $request)
     {
         \Log::info($request->all());
@@ -71,6 +112,23 @@ class ArtworkController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/collections-tags",
+     *     summary="Get collections and tags with their usage count",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Collections and tags fetched successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="collections", type="array", @OA\Items(ref="#/components/schemas/Collection")),
+     *             @OA\Property(property="tags", type="array", @OA\Items(ref="#/components/schemas/Tag"))
+     *         )
+     *     )
+     * )
+     */
     public function getCollectionsAndTags()
     {
         $collections = Collection::withCount([
@@ -90,6 +148,49 @@ class ArtworkController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/artworks",
+     *     summary="Create a new artwork",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"name", "art_type", "artwork_status", "sizes", "prices", "description", "customizable"},
+     *             @OA\Property(property="name", type="string", example="Sunset Painting"),
+     *             @OA\Property(property="images", type="array", @OA\Items(type="string", format="binary")),
+     *             @OA\Property(property="art_type", type="string", example="Painting"),
+     *             @OA\Property(property="artwork_status", type="string", example="Available"),
+     *             @OA\Property(property="sizes", type="array", @OA\Items(type="string", example="24x36")),
+     *             @OA\Property(property="prices", type="array", @OA\Items(type="number", format="float", example=200.50)),
+     *             @OA\Property(property="description", type="string", example="A beautiful sunset painting."),
+     *             @OA\Property(property="tags", type="array", @OA\Items(type="integer", example=1)),
+     *             @OA\Property(property="collections", type="array", @OA\Items(type="integer", example=2)),
+     *             @OA\Property(property="customizable", type="boolean", example=true),
+     *             @OA\Property(property="duration", type="string", nullable=true, example="7 days", description="Required if customizable is true")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Artwork created successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Artwork created successfully."),
+     *             @OA\Property(property="artwork", ref="#/components/schemas/Artwork")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Sizes and prices mismatch or other validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
     public function createArtwork(Request $request)
     {
         $validated = $request->validate([
@@ -158,6 +259,38 @@ class ArtworkController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/artworks/{id}/like",
+     *     summary="Like an artwork",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the artwork to like",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Artwork liked successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Liked successfully"),
+     *             @OA\Property(property="likes_count", type="integer", example=5)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork not found"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Already liked"
+     *     )
+     * )
+     */
     public function like(Request $request, $id)
     {
         $user = Auth::user();
@@ -180,6 +313,34 @@ class ArtworkController extends Controller
         return response()->json(['message' => 'Liked successfully', 'likes_count' => $artwork->likes_count], 201);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/artworks/{id}/like",
+     *     summary="Unlike an artwork",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the artwork to unlike",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Artwork unliked successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unliked successfully"),
+     *             @OA\Property(property="likes_count", type="integer", example=4)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork or like not found"
+     *     )
+     * )
+     */
     public function unlike(Request $request, $id)
     {
         $user = Auth::user();
