@@ -17,6 +17,7 @@ Route::post('/reset-password', [LoginController::class, 'resetPassword']);
 Route::group(['middleware' => 'auth:sanctum'], function () {
     // registration as artist
     Route::post('/add-social-media-links', [RegisterController::class, 'addSocialMediaLinks']);
+    Route::get('/get-categories', [RegisterController::class, 'getCategories']);
     Route::post('/choose-categories', [RegisterController::class, 'addCategories']);
     Route::post('/add-pickup-location', [RegisterController::class, 'addPickupLocation']);
     Route::post('/add-address', [AddressController::class, 'store']);

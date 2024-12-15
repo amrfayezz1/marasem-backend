@@ -13,9 +13,11 @@ class TagsSeeder extends Seeder
      */
     public function run(): void
     {
-        $tags = ['Abstract', 'Realism', 'Portrait', 'Landscape', 'Surrealism', 'Modern'];
-        foreach ($tags as $tag) {
-            Tag::create(['name' => $tag]);
+        $tags = ['Abstract', 'Realism', 'Portrait', 'Landscape', 'Surrealism', 'Modern', 'Antique'];
+        // get category ids from db
+        $ids = \App\Models\Category::pluck('id')->toArray();
+        foreach ($tags as $i => $tag) {
+            Tag::create(['name' => $tag, 'category_id' => $ids[$i]]);
         }
     }
 }

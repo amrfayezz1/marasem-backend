@@ -104,7 +104,15 @@ class RegisterController extends Controller
         ]);
     }
 
-    // Step 3: Choose categories
+    // Step 3.1: Get all categories
+    public function getCategories()
+    {
+        $categories = \App\Models\Tag::all();
+        return response()->json([
+            'categories' => $categories,
+        ]);
+    }
+    // Step 3.2: Choose categories
     public function addCategories(Request $request)
     {
         $validated = Validator::make($request->all(), [
@@ -169,7 +177,7 @@ class RegisterController extends Controller
             'city' => $request->city,
             'zone' => $request->zone,
             'address' => $request->address,
-            'is_main' => 1,
+            'is_default' => 1,
         ]);
         $artistDetail->completed = true; // Mark as completed
         $artistDetail->registration_step = 4; // Final step
