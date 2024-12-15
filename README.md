@@ -13,8 +13,8 @@ Follow these steps to set up and run the application:
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/amrfayezz1/marasem-backend.git
+cd marasem-backend
 ```
 
 ### 2. Install Dependencies
@@ -57,9 +57,9 @@ php artisan migrate
 ### 7. Seed the Database
 Run the seeders for each class to populate the database with initial data:
 ```bash
-php artisan db:seed --class=CategorySeeder
-php artisan db:seed --class=TagSeeder
-php artisan db:seed --class=CollectionSeeder
+php artisan db:seed --class=CategoriesTableSeeder
+php artisan db:seed --class=TagsSeeder
+php artisan db:seed --class=CollectionsSeeder
 ```
 
 ### 8. Install Node.js Dependencies
@@ -110,9 +110,9 @@ The application supports social login using the following providers:
   ```
   GET http://localhost:8000/login/google/redirect
   ```
-- Handle callback for Behance:
+- Handle callback for Google:
   ```
-  GET http://localhost:8000/login/behance/callback
+  GET http://localhost:8000/login/google/callback
   ```
 
 **Error Handling:**
@@ -122,7 +122,7 @@ The application supports social login using the following providers:
 **Token Usage:**
 - After successful login, use the Bearer token in subsequent API requests by including it in the `Authorization` header:
   ```
-  Authorization: Bearer <your-token-here>
+  Authorization: Bearer <returned-token-here>
   ```
 
 ## Postman Collection
