@@ -35,9 +35,9 @@ class Collection extends Model
         $this->attributes['tags'] = json_encode($value);
     }
 
-    public function addFollower()
+    public function followers()
     {
-        $this->increment('followers');
+        return $this->belongsToMany(User::class, 'collection_user');
     }
 
 }

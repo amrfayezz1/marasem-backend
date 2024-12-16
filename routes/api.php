@@ -6,12 +6,25 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\ArtworkController;
+use App\Http\Controllers\FilterController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CollectionController;
+
 
 // auth
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/send-otp', [LoginController::class, 'sendOtp']);
 Route::post('/reset-password', [LoginController::class, 'resetPassword']);
+
+Route::get('/artworks', [ArtworkController::class, 'fetchArtworks']);
+Route::get('/search', [FilterController::class, 'search']);
+Route::get('/filters', [FilterController::class, 'getFilters']);
+Route::post('/filters/apply', [FilterController::class, 'applyFilters']);
+
+Route::get('/collections', [CollectionController::class, 'index']);
+Route::get('/collections/{id}', [CollectionController::class, 'show']);
 
 // group with sanctum
 Route::group(['middleware' => 'auth:sanctum'], function () {
@@ -22,9 +35,18 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     // like
     Route::post('artworks/{id}/like', [ArtworkController::class, 'like']);
     Route::delete('artworks/{id}/like', [ArtworkController::class, 'unlike']);
-});
 
-Route::get('/artworks', [ArtworkController::class, 'fetchArtworks']);
+    Route::post('/cart', [CartController::class, 'addToCart']);
+    Route::delete('/cart', [CartController::class, 'removeFromCart']);
+    Route::get('/cart', [CartController::class, 'getCartItems']);
+    Route::get('/checkout', [CartController::class, 'getCheckoutData']);
+    Route::post('/order', [OrderController::class, 'placeOrder']);
+    Route::post('/custom-order', [OrderController::class, 'placeCustomOrder']);
+    Route::get('/orders', [OrderController::class, 'viewOrders']);
+
+    Route::post('/collections/{id}/follow', [CollectionController::class, 'follow']);
+    Route::post('/collections/{id}/unfollow', [CollectionController::class, 'unfollow']);
+});
 
 Route::middleware(['auth:sanctum', 'can:is-artist'])->group(function () {
     // adding artwork
@@ -35,4 +57,7 @@ Route::middleware(['auth:sanctum', 'can:is-artist'])->group(function () {
     Route::get('/get-categories', [RegisterController::class, 'getCategories']);
     Route::post('/choose-categories', [RegisterController::class, 'addCategories']);
     Route::post('/add-pickup-location', [RegisterController::class, 'addPickupLocation']);
+
+    Route::get('/artist/customized-orders', [OrderController::class, 'showCustomizedForArtist']);
+    Route::get('/artist/orders', [OrderController::class, 'viewOrdersForArtist']);
 });
