@@ -66,6 +66,7 @@ class RegisterController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'currency' => 'nullable|string|size:3',
             'phone' => [
                 'required',
                 'string',
@@ -90,6 +91,7 @@ class RegisterController extends Controller
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
             'country_code' => $request->country_code,
+            'preferred_currency' => $validated['currency'] ?? 'EGP',
         ]);
 
         // If the user is an artist, create their artist details record

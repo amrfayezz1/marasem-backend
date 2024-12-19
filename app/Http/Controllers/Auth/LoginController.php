@@ -80,6 +80,7 @@ class LoginController extends Controller
             'country_code' => 'required_without:email|string',
             'password' => 'required|string',
             'remember' => 'nullable|boolean',
+            'currency' => 'nullable|string|size:3',
         ]);
 
         if ($validator->fails()) {
@@ -88,6 +89,9 @@ class LoginController extends Controller
 
         if ($request->email && Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
+            if (isset($request->currency) && $request->currency) {
+                $user->update(['preferred_currency' => $request->currency]);
+            }
             $token = $user->createToken('MarasemApp')->plainTextToken;
 
             return response()->json([

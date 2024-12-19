@@ -10,6 +10,8 @@ use App\Http\Controllers\FilterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\EventController;
 
 
 // auth
@@ -26,9 +28,12 @@ Route::post('/filters/apply', [FilterController::class, 'applyFilters']);
 Route::get('/collections', [CollectionController::class, 'index']);
 Route::get('/collections/{id}', [CollectionController::class, 'show']);
 
+Route::get('/events', [EventController::class, 'getEvents']);
+
 // group with sanctum
 Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::post('/add-address', [AddressController::class, 'store']);
+    Route::post('/change-currency', [UserController::class, 'changeCurrency']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
 

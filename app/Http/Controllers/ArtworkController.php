@@ -215,10 +215,14 @@ class ArtworkController extends Controller
             'duration' => Rule::requiredIf($request->customizable == true),
         ]);
 
-        // Validate that sizes and prices have matching lengths
         if (count($validated['sizes']) !== count($validated['prices'])) {
             return response()->json(['error' => 'Sizes and prices must have matching counts.'], 400);
         }
+    
+        // Calculate min and max prices
+        $prices = $validated['prices'];
+        $minPrice = min($prices);
+        $maxPrice = max($prices);
 
         // Upload images
         $uploadedImages = [];
@@ -240,11 +244,11 @@ class ArtworkController extends Controller
             'description' => $validated['description'],
             'customizable' => $validated['customizable'],
             'duration' => $validated['customizable'] ? $validated['duration'] : null,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
         ]);
 
         // Attach tags and collections
-
-
         if (!empty($validated['tags'])) {
             $artwork->tags()->attach($validated['tags']);
         }

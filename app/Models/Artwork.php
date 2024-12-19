@@ -19,7 +19,9 @@ class Artwork extends Model
         'description',
         'customizable',
         'duration',
-        'likes_count'
+        'likes_count',
+        'min_price',
+        'max_price',
     ];
 
     public function likes()
@@ -90,6 +92,11 @@ class Artwork extends Model
     public function attachCollections(array $collectionIds)
     {
         $this->collections()->sync($collectionIds);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
 }

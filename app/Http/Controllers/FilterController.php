@@ -41,12 +41,11 @@ class FilterController extends Controller
         $priceFrom = $request->input('price_from');
         $priceTo = $request->input('price_to');
         $tagIds = $request->input('tags', []);
+        $sortBy = $request->input('sort_by');
 
         $query = Artwork::query();
 
         // Filter by category (AND dimension)
-        // OR logic within the category array:
-        // An artwork qualifies if it has at least one tag whose category_id is in $categoryIds
         if (!empty($categoryIds)) {
             $query->whereHas('tags.category', function ($q) use ($categoryIds) {
                 $q->whereIn('categories.id', $categoryIds);
@@ -54,7 +53,6 @@ class FilterController extends Controller
         }
 
         // Filter by tags (AND dimension)
-        // Artwork must have at least one of the given tags if tagIds is not empty.
         if (!empty($tagIds)) {
             $query->whereHas('tags', function ($q) use ($tagIds) {
                 $q->whereIn('tags.id', $tagIds);
@@ -62,35 +60,42 @@ class FilterController extends Controller
         }
 
         // Filter by location (AND dimension)
-        // Artwork must come from an artist who has an address in one of these cities.
         if (!empty($locations)) {
             $query->whereHas('artist.addresses', function ($q) use ($locations) {
                 $q->whereIn('city', $locations);
             });
         }
 
-        $artworks = $query->get();
-
-        // Filter by price range after fetching,
-        // since sizes_prices is JSON (or consider storing min/max price to filter in DB)
-        if ($priceFrom !== null || $priceTo !== null) {
-            $artworks = $artworks->filter(function ($artwork) use ($priceFrom, $priceTo) {
-                $sizesPrices = json_decode($artwork->sizes_prices, true);
-
-                // Extract all prices from the JSON
-                $allPrices = array_values($sizesPrices);
-                $minPrice = min($allPrices);
-                $maxPrice = max($allPrices);
-
-                // Check price range logic
-                // The artwork qualifies if it overlaps with the given price range
-                $meetsMin = ($priceFrom === null) || ($maxPrice >= $priceFrom);
-                $meetsMax = ($priceTo === null) || ($minPrice <= $priceTo);
-
-                return $meetsMin && $meetsMax;
-            })->values();
+        // Filter by price range using min_price and max_price
+        if ($priceFrom !== null) {
+            $query->where('max_price', '>=', $priceFrom);
+        }
+        if ($priceTo !== null) {
+            $query->where('min_price', '<=', $priceTo);
         }
 
+        // Sorting logic
+        if ($sortBy) {
+            switch ($sortBy) {
+                case 'best_selling':
+                    $query->withCount('orderItems') // Count related order items
+                        ->orderBy('order_items_count', 'desc'); // Sort by the count in descending order
+                    break;
+
+                case 'most_liked':
+                    $query->orderBy('likes_count', 'desc'); // Assuming 'likes_count' is a column in the artworks table
+                    break;
+
+                case 'price_low_to_high':
+                    $query->orderBy('min_price', 'asc'); // Use min_price for low to high sorting
+                    break;
+
+                case 'price_high_to_low':
+                    $query->orderBy('max_price', 'desc'); // Use max_price for high to low sorting
+                    break;
+            }
+        }
+        $artworks = $query->get();
         return response()->json($artworks);
     }
 
