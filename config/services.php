@@ -59,4 +59,12 @@ return [
         'redirect' => env('BEHANCE_REDIRECT_URL'),
     ],
 
+    'paymob' => [
+        'public_key' => env('PAYMOB_PUBLIC_KEY'),
+        'secret_key' => env('PAYMOB_SECRET_KEY'),
+        'integration_id' => env('PAYMOB_INTEGRATION_ID'),
+        'api_key' => env('PAYMOB_API_KEY'),
+        'hmac' => env('PAYMOB_HMAC'),
+    ],
+
 ];

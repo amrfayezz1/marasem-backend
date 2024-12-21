@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\CustomizedOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Http;
 
 class OrderController extends Controller
 {
@@ -24,7 +25,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'address_id' => 'required|exists:addresses,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash', // Currently supporting only "cash"
+            'payment_method' => 'required|in:cash,paymob', // Support "cash" and "paymob"
         ]);
 
         // Validate the total amount against the cart
@@ -56,19 +57,113 @@ class OrderController extends Controller
             ]);
         }
 
-        // Create a payment record
+        // Handle payment method
+        if ($validated['payment_method'] === 'cash') {
+            // Create a payment record for cash
+            Payment::create([
+                'order_id' => $order->id,
+                'method' => 'cash',
+                'amount' => $calculatedTotal,
+                'status' => 'pending',
+            ]);
+
+            // Generate Invoice
+            $this->generateInvoice($order, $cartItems, $user);
+
+            // Clear the user's cart
+            CartItem::where('user_id', $user->id)->delete();
+
+            return response()->json([
+                'message' => 'Order placed successfully. Payment is cash on delivery.',
+                'order' => $order,
+            ]);
+        }
+
+        // Handle Paymob payment method
+        if ($validated['payment_method'] === 'paymob') {
+            $paymobResponse = $this->createPaymobIntention($order, $cartItems, $calculatedTotal, $user);
+            if (!$paymobResponse) {
+                return response()->json(['error' => 'Failed to create payment intention.'], 500);
+            }
+
+            return response()->json([
+                'message' => 'Order placed successfully. Redirect to Paymob for payment.',
+                'redirect_url' => $paymobResponse['redirect_url'],
+                'order' => $order,
+            ]);
+        }
+    }
+
+    protected function createPaymobIntention($order, $cartItems, $totalAmount, $user)
+    {
+        $paymobUrl = "https://accept.paymob.com/v1/intention/";
+        $paymobSecretKey = config('services.paymob.secret_key');
+        $paymobPublicKey = config('services.paymob.public_key');
+        $paymobIntegrationId = config('services.paymob.integration_id');
+        $paymobApiKey = config('services.paymob.api_key');
+
+        // Build request payload
+        $items = $cartItems->map(function ($item) {
+            return [
+                'name' => $item->artwork->name,
+                'amount' => $item->price * 100, // Convert to cents
+                'description' => $item->artwork->description ?? 'Artwork item',
+                'quantity' => $item->quantity,
+            ];
+        })->toArray();
+
+        $payload = [
+            'amount' => $totalAmount * 100, // Convert to cents
+            'currency' => 'EGP',
+            'items' => $items,
+            'payment_methods' => [(int) $paymobIntegrationId],
+            'billing_data' => [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'phone_number' => $user->phone,
+                'email' => $user->email,
+            ],
+            'special_reference' => "order-{$order->id}",
+        ];
+
+        // Make API request
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$paymobSecretKey}",
+            'Content-Type' => 'application/json',
+        ])->post($paymobUrl, $payload);
+
+        if ($response->failed()) {
+            \Log::error($response->body());
+            return null;
+        }
+
+        $responseData = $response->json();
+
+        // Store Paymob data in the database
         Payment::create([
             'order_id' => $order->id,
-            'method' => $validated['payment_method'],
-            'amount' => $calculatedTotal,
+            'method' => 'paymob',
+            'amount' => $totalAmount,
             'status' => 'pending',
+            'extra_data' => json_encode($responseData), // Store all Paymob response data for future use
         ]);
 
+        // Construct the redirect URL
+        $redirectUrl = "https://accept.paymob.com/unifiedcheckout/?publicKey={$paymobPublicKey}&clientSecret={$responseData['client_secret']}";
+
+        return [
+            'redirect_url' => $redirectUrl,
+            'response_data' => $responseData,
+        ];
+    }
+
+    protected function generateInvoice($order, $cartItems, $user)
+    {
         $invoiceNumber = 'MARASEM-INV-' . strtoupper(uniqid());
         $invoice = Invoice::create([
             'order_id' => $order->id,
             'invoice_number' => $invoiceNumber,
-            'amount' => $calculatedTotal,
+            'amount' => $order->total_amount,
             'status' => 'pending',
         ]);
 
@@ -84,13 +179,7 @@ class OrderController extends Controller
         $fullPath = \Storage::disk('public')->url($relativePath);
         $invoice->update(['path' => $fullPath]);
 
-        // Clear the user's cart
-        CartItem::where('user_id', $user->id)->delete();
-
-        return response()->json([
-            'message' => 'Order placed successfully.',
-            'order' => $order,
-        ]);
+        return $invoice;
     }
 
     public function placeCustomOrder(Request $request)

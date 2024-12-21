@@ -12,6 +12,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PaymobController;
 
 
 // auth
@@ -66,3 +67,17 @@ Route::middleware(['auth:sanctum', 'can:is-artist'])->group(function () {
     Route::get('/artist/customized-orders', [OrderController::class, 'showCustomizedForArtist']);
     Route::get('/artist/orders', [OrderController::class, 'viewOrdersForArtist']);
 });
+
+// payments
+Route::post('/paymob/processed-callback', [PaymobController::class, 'processedCallback']);
+Route::get('/paymob/response-callback', [PaymobController::class, 'responseCallback']);
+
+Route::get('/payment/success', function () {
+    $successMessage = session('success', 'Payment completed successfully!');
+    return view('payment.success', compact('successMessage'));
+})->name('payment.success');
+
+Route::get('/payment/error', function () {
+    $errorMessage = session('error', 'Payment failed. Please try again.');
+    return view('payment.error', compact('errorMessage'));
+})->name('payment.error');

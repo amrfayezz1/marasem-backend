@@ -114,10 +114,11 @@ class CartController extends Controller
         $total = $cartItems->reduce(function ($carry, $item) {
             return $carry + ($item->price * $item->quantity);
         }, 0);
+        $itemsCount = $cartItems->sum('quantity');
 
         return response()->json([
             'cart_items' => $cartItems,
-            'items_count' => count($cartItems),
+            'items_count' => $itemsCount,
             'total' => $total
         ]);
     }
