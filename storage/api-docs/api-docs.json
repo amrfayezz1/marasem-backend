@@ -1339,10 +1339,2139 @@
                     }
                 }
             }
+        },
+        "/cart": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Get all items in the user's cart",
+                "operationId": "1e14cc41d8b7d6fe2fa8fcdc5b216330",
+                "responses": {
+                    "200": {
+                        "description": "List of items in the cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "cart_items": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "artwork_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "size": {
+                                                        "type": "string",
+                                                        "example": "24x36"
+                                                    },
+                                                    "quantity": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "example": 200.5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "items_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "total": {
+                                            "type": "number",
+                                            "example": 601.5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Add an item to the cart",
+                "operationId": "92a0966476517dddddd69687a29bed25",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "artwork_id",
+                                    "size"
+                                ],
+                                "properties": {
+                                    "artwork_id": {
+                                        "description": "ID of the artwork to add",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "size": {
+                                        "description": "Selected size of the artwork",
+                                        "type": "string",
+                                        "example": "24x36"
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity of the artwork to add",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item added to cart successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Item added to cart successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "You must be logged in to add to cart."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid size selected"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Remove an item from the cart",
+                "operationId": "a0bff2234b29f39f3dd7823e81a9db51",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "artwork_id"
+                                ],
+                                "properties": {
+                                    "artwork_id": {
+                                        "description": "ID of the artwork to remove",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "size": {
+                                        "description": "Size of the artwork to remove",
+                                        "type": "string",
+                                        "example": "24x36",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item removed from cart successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Item removed from cart successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Item not found in cart"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/checkout": {
+            "get": {
+                "tags": [
+                    "Cart"
+                ],
+                "summary": "Get checkout data including cart items and addresses",
+                "operationId": "d42d23166d2c60e9d01b92a2ae66da9b",
+                "responses": {
+                    "200": {
+                        "description": "Checkout data fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "items_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "total": {
+                                            "type": "number",
+                                            "example": 601.5
+                                        },
+                                        "addresses": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "city": {
+                                                        "type": "string",
+                                                        "example": "Cairo"
+                                                    },
+                                                    "zone": {
+                                                        "type": "string",
+                                                        "example": "Downtown"
+                                                    },
+                                                    "address": {
+                                                        "type": "string",
+                                                        "example": "123 Main St"
+                                                    },
+                                                    "is_default": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/collections": {
+            "get": {
+                "tags": [
+                    "Collections"
+                ],
+                "summary": "List all collections with their latest three artworks",
+                "operationId": "7b241eefae469d00143adf95e94029b1",
+                "responses": {
+                    "200": {
+                        "description": "Collections fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "Collection ID",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "description": "Collection name",
+                                                "type": "string",
+                                                "example": "Nature Collection"
+                                            },
+                                            "tags": {
+                                                "description": "Tags associated with the collection",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "example": "Landscape"
+                                                }
+                                            },
+                                            "followers": {
+                                                "description": "Number of followers",
+                                                "type": "integer",
+                                                "example": 200
+                                            },
+                                            "latest_artworks": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "description": "Artwork ID",
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "description": "Artwork name",
+                                                            "type": "string",
+                                                            "example": "Sunset Painting"
+                                                        },
+                                                        "images": {
+                                                            "description": "Artwork images",
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "example": "https://example.com/image.jpg"
+                                                            }
+                                                        },
+                                                        "art_type": {
+                                                            "description": "Type of artwork",
+                                                            "type": "string",
+                                                            "example": "Painting"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/collections/{id}": {
+            "get": {
+                "tags": [
+                    "Collections"
+                ],
+                "summary": "View a specific collection and its artworks",
+                "operationId": "5346e26517da2213584c2e3c0ea2798c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the collection",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Collection fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "description": "Collection ID",
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "description": "Collection name",
+                                            "type": "string",
+                                            "example": "Nature Collection"
+                                        },
+                                        "tags": {
+                                            "description": "Tags associated with the collection",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "Landscape"
+                                            }
+                                        },
+                                        "followers": {
+                                            "description": "Number of followers",
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "artwork_tags": {
+                                            "description": "Unique tags from the artworks in this collection",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "Sunset"
+                                            }
+                                        },
+                                        "artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "description": "Artwork ID",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "description": "Artwork name",
+                                                        "type": "string",
+                                                        "example": "Sunset Painting"
+                                                    },
+                                                    "images": {
+                                                        "description": "Artwork images",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/image.jpg"
+                                                        }
+                                                    },
+                                                    "art_type": {
+                                                        "description": "Type of artwork",
+                                                        "type": "string",
+                                                        "example": "Painting"
+                                                    },
+                                                    "artist": {
+                                                        "$ref": "#/components/schemas/User"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Collection not found"
+                    }
+                }
+            }
+        },
+        "/collections/{id}/follow": {
+            "post": {
+                "tags": [
+                    "Collections"
+                ],
+                "summary": "Follow a collection",
+                "operationId": "5eb9074f0c5e37470a554588d6ccfd6c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the collection to follow",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Collection followed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Collection followed successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "400": {
+                        "description": "Already following the collection"
+                    },
+                    "404": {
+                        "description": "Collection not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/collections/{id}/unfollow": {
+            "post": {
+                "tags": [
+                    "Collections"
+                ],
+                "summary": "Unfollow a collection",
+                "operationId": "d4f0344818d3a5f90ae5afde272b2eb4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the collection to unfollow",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Collection unfollowed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Collection unfollowed successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "400": {
+                        "description": "Not following the collection"
+                    },
+                    "404": {
+                        "description": "Collection not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/events": {
+            "get": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Retrieve a list of upcoming events",
+                "operationId": "e43d73e90b9e7bdd56c9dcad65ef30f8",
+                "responses": {
+                    "200": {
+                        "description": "List of events retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "Event ID",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "title": {
+                                                "description": "Event title",
+                                                "type": "string",
+                                                "example": "Art Exhibition 2024"
+                                            },
+                                            "description": {
+                                                "description": "Event description",
+                                                "type": "string",
+                                                "example": "A showcase of modern art."
+                                            },
+                                            "date_start": {
+                                                "description": "Start date of the event",
+                                                "type": "string",
+                                                "format": "date",
+                                                "example": "2024-03-15"
+                                            },
+                                            "date_end": {
+                                                "description": "End date of the event",
+                                                "type": "string",
+                                                "format": "date",
+                                                "example": "2024-03-18",
+                                                "nullable": true
+                                            },
+                                            "time_start": {
+                                                "description": "Start time of the event",
+                                                "type": "string",
+                                                "format": "time",
+                                                "example": "10:00:00",
+                                                "nullable": true
+                                            },
+                                            "time_end": {
+                                                "description": "End time of the event",
+                                                "type": "string",
+                                                "format": "time",
+                                                "example": "18:00:00",
+                                                "nullable": true
+                                            },
+                                            "location": {
+                                                "description": "Event location",
+                                                "type": "string",
+                                                "example": "Downtown Art Gallery"
+                                            },
+                                            "location_url": {
+                                                "description": "Google Maps link to the location",
+                                                "type": "string",
+                                                "format": "url",
+                                                "example": "https://maps.google.com?q=downtown-art-gallery",
+                                                "nullable": true
+                                            },
+                                            "cover_img_path": {
+                                                "description": "URL to the event cover image",
+                                                "type": "string",
+                                                "format": "url",
+                                                "example": "https://example.com/event-cover.jpg",
+                                                "nullable": true
+                                            },
+                                            "status": {
+                                                "description": "Status of the event",
+                                                "type": "string",
+                                                "example": "active"
+                                            },
+                                            "expires": {
+                                                "description": "Expiration date of the event, if applicable",
+                                                "type": "string",
+                                                "format": "date",
+                                                "example": "2024-03-19",
+                                                "nullable": true
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/filters": {
+            "get": {
+                "tags": [
+                    "Filters"
+                ],
+                "summary": "Get available filters for artworks",
+                "operationId": "dab2d1715052bf841e24182a5b4b44cf",
+                "responses": {
+                    "200": {
+                        "description": "Filters fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Painting"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Landscape"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Painting"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "locations": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "city": {
+                                                        "type": "string",
+                                                        "example": "Cairo"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/filters/apply": {
+            "post": {
+                "tags": [
+                    "Filters"
+                ],
+                "summary": "Apply filters to fetch artworks",
+                "operationId": "d863f860b5ba55568db81476b4a02045",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "category": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "location": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Cairo"
+                                        }
+                                    },
+                                    "price_from": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "price_to": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 10
+                                        }
+                                    },
+                                    "sort_by": {
+                                        "type": "string",
+                                        "enum": [
+                                            "best_selling",
+                                            "most_liked",
+                                            "price_low_to_high",
+                                            "price_high_to_low"
+                                        ],
+                                        "example": "most_liked"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Filtered artworks",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Artwork"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "tags": [
+                    "Filters"
+                ],
+                "summary": "Search for artworks by name or description",
+                "operationId": "8d1430d2630c40e02168633142c358fe",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search query for artwork name or description",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "sunset"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Pagination offset",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Pagination limit",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results with pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "has_more": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Place a new order",
+                "operationId": "848a5cedbc2597d26606bf452305f526",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "address_id",
+                                    "amount",
+                                    "payment_method"
+                                ],
+                                "properties": {
+                                    "address_id": {
+                                        "description": "ID of the address for delivery",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "amount": {
+                                        "description": "Total amount of the order",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200.5
+                                    },
+                                    "payment_method": {
+                                        "description": "Payment method",
+                                        "type": "string",
+                                        "enum": [
+                                            "cash",
+                                            "paymob"
+                                        ],
+                                        "example": "cash"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order placed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order placed successfully. Payment is cash on delivery."
+                                        },
+                                        "order": {
+                                            "$ref": "#/components/schemas/Order"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "400": {
+                        "description": "Invalid total amount"
+                    },
+                    "500": {
+                        "description": "Payment intention creation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/custom-order": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Place a customized order",
+                "operationId": "a709832b96d9720a166cd9b8dcf7713b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "artwork_id",
+                                    "desired_size",
+                                    "offering_price",
+                                    "address_id"
+                                ],
+                                "properties": {
+                                    "artwork_id": {
+                                        "description": "ID of the artwork for customization",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "desired_size": {
+                                        "description": "Desired size of the artwork",
+                                        "type": "string",
+                                        "example": "36x48"
+                                    },
+                                    "offering_price": {
+                                        "description": "Offered price for customization",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 300
+                                    },
+                                    "address_id": {
+                                        "description": "ID of the address for delivery",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "I want this artwork in a larger size.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Customized order placed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customized order submitted successfully."
+                                        },
+                                        "customized_order": {
+                                            "$ref": "#/components/schemas/CustomizedOrder"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/customized-orders": {
+            "get": {
+                "tags": [
+                    "Artist Orders"
+                ],
+                "summary": "View customized orders for the artist",
+                "operationId": "65a62d155e66eaf5a27dac284e923ce5",
+                "responses": {
+                    "200": {
+                        "description": "Customized orders fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CustomizedOrder"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "View user orders",
+                "operationId": "e839338683dd8da916e63d73f8cbf24e",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Specific order ID to view details",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orders fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Order"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/orders": {
+            "get": {
+                "tags": [
+                    "Artist Orders"
+                ],
+                "summary": "View orders containing the artist's artworks",
+                "operationId": "8d8369b86986014d941e012d20fac437",
+                "responses": {
+                    "200": {
+                        "description": "Orders for the artist fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "order_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "items": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "artwork_name": {
+                                                            "type": "string",
+                                                            "example": "Sunset Painting"
+                                                        },
+                                                        "size": {
+                                                            "type": "string",
+                                                            "example": "24x36"
+                                                        },
+                                                        "quantity": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "price": {
+                                                            "type": "number",
+                                                            "example": 200.5
+                                                        },
+                                                        "total": {
+                                                            "type": "number",
+                                                            "example": 401
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "items_count": {
+                                                "type": "integer",
+                                                "example": 3
+                                            },
+                                            "total": {
+                                                "type": "number",
+                                                "example": 1200.5
+                                            },
+                                            "invoice_path": {
+                                                "type": "string",
+                                                "example": "/invoices/12345.pdf"
+                                            },
+                                            "selected_address": {
+                                                "$ref": "#/components/schemas/Address"
+                                            },
+                                            "payment_method": {
+                                                "type": "string",
+                                                "example": "cash"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "403": {
+                        "description": "Access restricted to artists only"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/paymob/processed-callback": {
+            "post": {
+                "tags": [
+                    "Paymob"
+                ],
+                "summary": "Handle the transaction processed callback from Paymob",
+                "operationId": "71f02efd7ddf157c4fb5981e9e99d64d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "type": {
+                                        "description": "Callback type",
+                                        "type": "string",
+                                        "example": "TRANSACTION"
+                                    },
+                                    "obj": {
+                                        "description": "Transaction data",
+                                        "properties": {
+                                            "order": {
+                                                "properties": {
+                                                    "merchant_order_id": {
+                                                        "description": "Merchant order ID",
+                                                        "type": "string",
+                                                        "example": "order-123"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "id": {
+                                                "description": "Transaction ID",
+                                                "type": "integer",
+                                                "example": 456789
+                                            },
+                                            "success": {
+                                                "description": "Transaction success status",
+                                                "type": "boolean",
+                                                "example": true
+                                            },
+                                            "amount_cents": {
+                                                "description": "Transaction amount in cents",
+                                                "type": "integer",
+                                                "example": 10000
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "hmac": {
+                                        "description": "HMAC for validation",
+                                        "type": "string",
+                                        "example": "calculated-hmac-value"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Callback processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "processed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid HMAC",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid HMAC."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Order not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Transaction data missing or invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Transaction data missing."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/paymob/response-callback": {
+            "get": {
+                "tags": [
+                    "Paymob"
+                ],
+                "summary": "Handle the transaction response callback from Paymob",
+                "operationId": "0d10a9ecad4f68e5f9e7cbddfb917f94",
+                "parameters": [
+                    {
+                        "name": "merchant_order_id",
+                        "in": "query",
+                        "description": "Merchant order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "order-123"
+                        }
+                    },
+                    {
+                        "name": "success",
+                        "in": "query",
+                        "description": "Payment success status",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "true",
+                                "false"
+                            ],
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "hmac",
+                        "in": "query",
+                        "description": "HMAC for validation",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "calculated-hmac-value"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Redirects to success or error page",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Redirecting..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid HMAC",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid HMAC."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Order not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/change-currency": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change the user's preferred currency",
+                "operationId": "7ca0eff68aca032af6e2abfe6b46dea7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "currency"
+                                ],
+                                "properties": {
+                                    "currency": {
+                                        "description": "The 3-letter currency code to set as preferred currency.",
+                                        "type": "string",
+                                        "example": "USD"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Currency updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Currency updated successfully."
+                                        },
+                                        "preferred_currency": {
+                                            "description": "The updated preferred currency.",
+                                            "type": "string",
+                                            "example": "USD"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
         "schemas": {
+            "Address": {
+                "required": [
+                    "user_id",
+                    "city",
+                    "zone",
+                    "address"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the address",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user associated with the address",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "city": {
+                        "description": "The city of the address",
+                        "type": "string",
+                        "example": "Cairo"
+                    },
+                    "zone": {
+                        "description": "The zone of the address",
+                        "type": "string",
+                        "example": "Downtown"
+                    },
+                    "address": {
+                        "description": "The detailed address",
+                        "type": "string",
+                        "example": "123 Main Street"
+                    },
+                    "phone": {
+                        "description": "Phone number for the address",
+                        "type": "string",
+                        "example": "1234567890"
+                    },
+                    "country_code": {
+                        "description": "Country code for the address's phone",
+                        "type": "string",
+                        "example": "+20"
+                    },
+                    "name": {
+                        "description": "Custom name for the address",
+                        "type": "string",
+                        "example": "John's Office"
+                    },
+                    "is_default": {
+                        "description": "Indicates if this is the default address",
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "ArtistDetail": {
+                "required": [
+                    "user_id",
+                    "registration_step",
+                    "completed"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the artist details",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user associated with the artist details",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "social_media_link": {
+                        "description": "The artist's social media link",
+                        "type": "string",
+                        "example": "https://instagram.com/artist",
+                        "nullable": true
+                    },
+                    "portfolio_link": {
+                        "description": "The artist's portfolio link",
+                        "type": "string",
+                        "example": "https://portfolio.com",
+                        "nullable": true
+                    },
+                    "website_link": {
+                        "description": "The artist's website link",
+                        "type": "string",
+                        "example": "https://website.com",
+                        "nullable": true
+                    },
+                    "other_link": {
+                        "description": "Other links related to the artist",
+                        "type": "string",
+                        "example": "https://example.com",
+                        "nullable": true
+                    },
+                    "summary": {
+                        "description": "A summary about the artist",
+                        "type": "string",
+                        "example": "Experienced artist specializing in watercolor paintings.",
+                        "nullable": true
+                    },
+                    "registration_step": {
+                        "description": "The current registration step for the artist",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "completed": {
+                        "description": "Indicates if the artist registration is completed",
+                        "type": "boolean",
+                        "example": false
+                    }
+                },
+                "type": "object"
+            },
+            "ArtworkLike": {
+                "required": [
+                    "user_id",
+                    "artwork_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the artwork like",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user who liked the artwork",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "artwork_id": {
+                        "description": "The ID of the liked artwork",
+                        "type": "integer",
+                        "example": 10
+                    }
+                },
+                "type": "object"
+            },
+            "CartItem": {
+                "required": [
+                    "user_id",
+                    "artwork_id",
+                    "size",
+                    "price",
+                    "quantity"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the cart item",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user who owns the cart item",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "artwork_id": {
+                        "description": "The ID of the artwork in the cart",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "size": {
+                        "description": "The selected size for the artwork",
+                        "type": "string",
+                        "example": "24x36"
+                    },
+                    "price": {
+                        "description": "The price of the artwork for the selected size",
+                        "type": "number",
+                        "format": "float",
+                        "example": 200.5
+                    },
+                    "quantity": {
+                        "description": "The quantity of the artwork in the cart",
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
+            "CustomizedOrder": {
+                "required": [
+                    "user_id",
+                    "artwork_id",
+                    "desired_size",
+                    "offering_price",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the customized order",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user who created the order",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "artwork_id": {
+                        "description": "The ID of the artwork for the order",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "desired_size": {
+                        "description": "The desired size for the artwork",
+                        "type": "string",
+                        "example": "36x48"
+                    },
+                    "offering_price": {
+                        "description": "The price offered for the custom order",
+                        "type": "number",
+                        "format": "float",
+                        "example": 300.75
+                    },
+                    "address_id": {
+                        "description": "The ID of the delivery address",
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "description": {
+                        "description": "Additional description for the order",
+                        "type": "string",
+                        "example": "I would like the artwork to have a sunset theme.",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "The status of the order",
+                        "type": "string",
+                        "example": "Pending"
+                    }
+                },
+                "type": "object"
+            },
+            "Category": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the category",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "The name of the category",
+                        "type": "string",
+                        "example": "Painting"
+                    }
+                },
+                "type": "object"
+            },
+            "Event": {
+                "required": [
+                    "title",
+                    "date_start",
+                    "time_start",
+                    "location"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the event",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "description": "The title of the event",
+                        "type": "string",
+                        "example": "Art Exhibition"
+                    },
+                    "description": {
+                        "description": "A detailed description of the event",
+                        "type": "string",
+                        "example": "A gallery exhibition for emerging artists.",
+                        "nullable": true
+                    },
+                    "date_start": {
+                        "description": "The starting date of the event",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-15"
+                    },
+                    "date_end": {
+                        "description": "The ending date of the event",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-18",
+                        "nullable": true
+                    },
+                    "time_start": {
+                        "description": "The starting time of the event",
+                        "type": "string",
+                        "format": "time",
+                        "example": "10:00"
+                    },
+                    "time_end": {
+                        "description": "The ending time of the event",
+                        "type": "string",
+                        "format": "time",
+                        "example": "18:00",
+                        "nullable": true
+                    },
+                    "location": {
+                        "description": "The location of the event",
+                        "type": "string",
+                        "example": "Art Gallery, Downtown"
+                    },
+                    "location_url": {
+                        "description": "Google Maps link for the event location",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://maps.google.com",
+                        "nullable": true
+                    },
+                    "cover_img_path": {
+                        "description": "Cover image for the event",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/cover.jpg",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "The status of the event",
+                        "type": "string",
+                        "example": "Upcoming"
+                    },
+                    "expires": {
+                        "description": "Indicates if the event has expired",
+                        "type": "boolean",
+                        "example": false
+                    }
+                },
+                "type": "object"
+            },
+            "Invoice": {
+                "required": [
+                    "order_id",
+                    "invoice_number",
+                    "amount",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the invoice",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "order_id": {
+                        "description": "The ID of the order associated with the invoice",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "invoice_number": {
+                        "description": "The unique invoice number",
+                        "type": "string",
+                        "example": "INV-1001"
+                    },
+                    "amount": {
+                        "description": "The total amount for the invoice",
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    },
+                    "status": {
+                        "description": "The payment status of the invoice",
+                        "type": "string",
+                        "example": "Paid"
+                    },
+                    "path": {
+                        "description": "The file path to the invoice document",
+                        "type": "string",
+                        "example": "/invoices/invoice-1001.pdf",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Order": {
+                "required": [
+                    "user_id",
+                    "address_id",
+                    "total_amount",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the order",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user who placed the order",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "address_id": {
+                        "description": "The ID of the address associated with the order",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "total_amount": {
+                        "description": "The total amount of the order",
+                        "type": "number",
+                        "format": "float",
+                        "example": 200.5
+                    },
+                    "status": {
+                        "description": "The current status of the order",
+                        "type": "string",
+                        "example": "Processing"
+                    }
+                },
+                "type": "object"
+            },
+            "OrderItem": {
+                "required": [
+                    "order_id",
+                    "artwork_id",
+                    "size",
+                    "quantity",
+                    "price"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the order item",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "order_id": {
+                        "description": "The ID of the order associated with the item",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "artwork_id": {
+                        "description": "The ID of the artwork in the order",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "size": {
+                        "description": "The size of the artwork in the order",
+                        "type": "string",
+                        "example": "24x36"
+                    },
+                    "quantity": {
+                        "description": "The quantity of the artwork in the order",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "price": {
+                        "description": "The price per unit of the artwork",
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    }
+                },
+                "type": "object"
+            },
+            "PasswordResetToken": {
+                "required": [
+                    "email",
+                    "token",
+                    "expired_at",
+                    "type"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the password reset token",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "email": {
+                        "description": "The email address associated with the token",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "token": {
+                        "description": "The hashed reset token",
+                        "type": "string",
+                        "example": "abc123xyz"
+                    },
+                    "expired_at": {
+                        "description": "The expiry date and time of the token",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T12:00:00Z"
+                    },
+                    "type": {
+                        "description": "The type of reset (e.g., email or phone)",
+                        "type": "string",
+                        "example": "email"
+                    }
+                },
+                "type": "object"
+            },
+            "Payment": {
+                "required": [
+                    "order_id",
+                    "method",
+                    "amount",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the payment",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "order_id": {
+                        "description": "The ID of the order associated with the payment",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "method": {
+                        "description": "The payment method used",
+                        "type": "string",
+                        "example": "Credit Card"
+                    },
+                    "amount": {
+                        "description": "The total amount of the payment",
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    },
+                    "status": {
+                        "description": "The status of the payment",
+                        "type": "string",
+                        "example": "Successful"
+                    },
+                    "extra_data": {
+                        "description": "Additional information about the payment",
+                        "type": "string",
+                        "example": "Transaction approved by bank",
+                        "nullable": true
+                    },
+                    "transaction_id": {
+                        "description": "The unique transaction identifier from the payment gateway",
+                        "type": "string",
+                        "example": "TXN12345"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialLogin": {
+                "required": [
+                    "user_id",
+                    "provider",
+                    "provider_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the social login",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user associated with the social login",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "provider": {
+                        "description": "The name of the social provider (e.g., google, facebook, behance)",
+                        "type": "string",
+                        "example": "google"
+                    },
+                    "provider_id": {
+                        "description": "The unique identifier of the user from the social provider",
+                        "type": "string",
+                        "example": "1234567890"
+                    }
+                },
+                "type": "object"
+            },
+            "Tag": {
+                "required": [
+                    "id",
+                    "name",
+                    "category_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the tag",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "The name of the tag",
+                        "type": "string",
+                        "example": "Landscape"
+                    },
+                    "category_id": {
+                        "description": "The ID of the category the tag belongs to",
+                        "type": "integer",
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "required": [
                     "id",
@@ -1391,6 +3520,12 @@
                         "example": "https://example.com/profile.jpg",
                         "nullable": true
                     },
+                    "preferred_currency": {
+                        "description": "The user's preferred currency",
+                        "type": "string",
+                        "example": "USD",
+                        "nullable": true
+                    },
                     "created_at": {
                         "description": "Timestamp when the user was created",
                         "type": "string",
@@ -1409,39 +3544,42 @@
             "Artwork": {
                 "required": [
                     "id",
-                    "name",
                     "artist_id",
+                    "name",
                     "photos",
                     "art_type",
                     "artwork_status",
                     "sizes_prices",
-                    "description"
+                    "description",
+                    "min_price",
+                    "max_price"
                 ],
                 "properties": {
                     "id": {
+                        "description": "The unique identifier of the artwork",
                         "type": "integer",
                         "example": 1
                     },
                     "artist_id": {
                         "description": "The ID of the artist who created the artwork",
                         "type": "integer",
-                        "example": 10
+                        "example": 5
                     },
                     "name": {
                         "description": "The name of the artwork",
                         "type": "string",
-                        "example": "Beautiful Landscape"
+                        "example": "Sunset Painting"
                     },
                     "photos": {
-                        "description": "Photos of the artwork",
+                        "description": "An array of photo URLs for the artwork",
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "example": "https://example.com/image1.jpg"
+                            "example": "https://example.com/photo.jpg"
                         }
                     },
                     "art_type": {
-                        "description": "The type of art",
+                        "description": "The type of artwork",
                         "type": "string",
                         "example": "Painting"
                     },
@@ -1451,7 +3589,7 @@
                         "example": "Available"
                     },
                     "sizes_prices": {
-                        "description": "Sizes and prices for the artwork",
+                        "description": "Sizes and corresponding prices for the artwork",
                         "type": "object",
                         "example": {
                             "24x36": 200.5,
@@ -1459,12 +3597,12 @@
                         }
                     },
                     "description": {
-                        "description": "Description of the artwork",
+                        "description": "A detailed description of the artwork",
                         "type": "string",
-                        "example": "A stunning depiction of a serene landscape."
+                        "example": "A beautiful painting of a sunset over a lake."
                     },
                     "customizable": {
-                        "description": "Indicates if the artwork is customizable",
+                        "description": "Indicates whether the artwork can be customized",
                         "type": "boolean",
                         "example": true
                     },
@@ -1478,6 +3616,18 @@
                         "description": "The number of likes for the artwork",
                         "type": "integer",
                         "example": 15
+                    },
+                    "min_price": {
+                        "description": "The minimum price of the artwork",
+                        "type": "number",
+                        "format": "float",
+                        "example": 150
+                    },
+                    "max_price": {
+                        "description": "The maximum price of the artwork",
+                        "type": "number",
+                        "format": "float",
+                        "example": 300
                     }
                 },
                 "type": "object"
@@ -1485,13 +3635,11 @@
             "Collection": {
                 "required": [
                     "id",
-                    "title",
-                    "tags",
-                    "followers"
+                    "title"
                 ],
                 "properties": {
                     "id": {
-                        "description": "The ID of the collection",
+                        "description": "The unique identifier of the collection",
                         "type": "integer",
                         "example": 1
                     },
@@ -1501,54 +3649,18 @@
                         "example": "Nature Collection"
                     },
                     "tags": {
-                        "description": "Tags associated with the collection",
+                        "description": "An array of tags associated with the collection",
                         "type": "array",
                         "items": {
                             "type": "string",
                             "example": "Landscape"
-                        }
+                        },
+                        "nullable": true
                     },
                     "followers": {
-                        "description": "Number of followers of the collection",
+                        "description": "The number of followers of the collection",
                         "type": "integer",
-                        "example": 200
-                    }
-                },
-                "type": "object"
-            },
-            "Tag": {
-                "required": [
-                    "id",
-                    "name",
-                    "category_id"
-                ],
-                "properties": {
-                    "id": {
-                        "description": "The ID of the tag",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "description": "The name of the tag",
-                        "type": "string",
-                        "example": "Landscape"
-                    },
-                    "category_id": {
-                        "description": "The ID of the category the tag belongs to",
-                        "type": "integer",
-                        "example": 2
-                    },
-                    "created_at": {
-                        "description": "Timestamp when the tag was created",
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-01-01T00:00:00Z"
-                    },
-                    "updated_at": {
-                        "description": "Timestamp when the tag was last updated",
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-01-01T00:00:00Z"
+                        "example": 100
                     }
                 },
                 "type": "object"
@@ -1583,6 +3695,38 @@
         {
             "name": "Social Login",
             "description": "Social Login"
+        },
+        {
+            "name": "Cart",
+            "description": "Cart"
+        },
+        {
+            "name": "Collections",
+            "description": "Collections"
+        },
+        {
+            "name": "Events",
+            "description": "Events"
+        },
+        {
+            "name": "Filters",
+            "description": "Filters"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
+        },
+        {
+            "name": "Artist Orders",
+            "description": "Artist Orders"
+        },
+        {
+            "name": "Paymob",
+            "description": "Paymob"
+        },
+        {
+            "name": "User",
+            "description": "User"
         }
     ]
 }

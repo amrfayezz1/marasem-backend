@@ -14,8 +14,49 @@ use App\Models\Invoice;
 class PaymobController extends Controller
 {
     /**
-     * Handle the Transaction Processed Callback.
+     * @OA\Post(
+     *     path="/paymob/processed-callback",
+     *     summary="Handle the transaction processed callback from Paymob",
+     *     tags={"Paymob"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="type", type="string", example="TRANSACTION", description="Callback type"),
+     *             @OA\Property(property="obj", type="object", description="Transaction data", 
+     *                 @OA\Property(property="order", type="object", 
+     *                     @OA\Property(property="merchant_order_id", type="string", example="order-123", description="Merchant order ID")
+     *                 ),
+     *                 @OA\Property(property="id", type="integer", example=456789, description="Transaction ID"),
+     *                 @OA\Property(property="success", type="boolean", example=true, description="Transaction success status"),
+     *                 @OA\Property(property="amount_cents", type="integer", example=10000, description="Transaction amount in cents")
+     *             ),
+     *             @OA\Property(property="hmac", type="string", example="calculated-hmac-value", description="HMAC for validation")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Callback processed successfully",
+     *         @OA\JsonContent(type="object", @OA\Property(property="status", type="string", example="processed"))
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Invalid HMAC",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string", example="Invalid HMAC."))
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Order not found",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string", example="Order not found."))
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Transaction data missing or invalid",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string", example="Transaction data missing."))
+     *     )
+     * )
      */
+
     public function processedCallback(Request $request)
     {
         $data = $request->all();
@@ -78,7 +119,47 @@ class PaymobController extends Controller
     }
 
     /**
-     * Handle the Transaction Response Callback.
+     * @OA\Get(
+     *     path="/paymob/response-callback",
+     *     summary="Handle the transaction response callback from Paymob",
+     *     tags={"Paymob"},
+     *     @OA\Parameter(
+     *         name="merchant_order_id",
+     *         in="query",
+     *         required=true,
+     *         description="Merchant order ID",
+     *         @OA\Schema(type="string", example="order-123")
+     *     ),
+     *     @OA\Parameter(
+     *         name="success",
+     *         in="query",
+     *         required=true,
+     *         description="Payment success status",
+     *         @OA\Schema(type="string", enum={"true", "false"}, example="true")
+     *     ),
+     *     @OA\Parameter(
+     *         name="hmac",
+     *         in="query",
+     *         required=true,
+     *         description="HMAC for validation",
+     *         @OA\Schema(type="string", example="calculated-hmac-value")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Redirects to success or error page",
+     *         @OA\JsonContent(type="object", @OA\Property(property="message", type="string", example="Redirecting..."))
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Invalid HMAC",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string", example="Invalid HMAC."))
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Order not found",
+     *         @OA\JsonContent(type="object", @OA\Property(property="error", type="string", example="Order not found."))
+     *     )
+     * )
      */
     public function responseCallback(Request $request)
     {

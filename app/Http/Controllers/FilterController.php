@@ -11,6 +11,54 @@ use Illuminate\Support\Facades\Auth;
 
 class FilterController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/filters",
+     *     summary="Get available filters for artworks",
+     *     tags={"Filters"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Filters fetched successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="categories",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Painting")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="tags",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=10),
+     *                     @OA\Property(property="name", type="string", example="Landscape"),
+     *                     @OA\Property(property="category_id", type="integer", example=1),
+     *                     @OA\Property(
+     *                         property="category",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Painting")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="locations",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="city", type="string", example="Cairo")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+
     public function getFilters()
     {
         // Fetch categories
@@ -33,6 +81,34 @@ class FilterController extends Controller
             'locations' => $locations
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/filters/apply",
+     *     summary="Apply filters to fetch artworks",
+     *     tags={"Filters"},
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="category", type="array", @OA\Items(type="integer", example=1)),
+     *             @OA\Property(property="location", type="array", @OA\Items(type="string", example="Cairo")),
+     *             @OA\Property(property="price_from", type="number", format="float", example=50.0),
+     *             @OA\Property(property="price_to", type="number", format="float", example=500.0),
+     *             @OA\Property(property="tags", type="array", @OA\Items(type="integer", example=10)),
+     *             @OA\Property(property="sort_by", type="string", enum={"best_selling", "most_liked", "price_low_to_high", "price_high_to_low"}, example="most_liked")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Filtered artworks",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Artwork")
+     *         )
+     *     )
+     * )
+     */
 
     public function applyFilters(Request $request)
     {
@@ -99,7 +175,44 @@ class FilterController extends Controller
         return response()->json($artworks);
     }
 
-    // with pagination
+    /**
+     * @OA\Get(
+     *     path="/search",
+     *     summary="Search for artworks by name or description",
+     *     tags={"Filters"},
+     *     @OA\Parameter(
+     *         name="q",
+     *         in="query",
+     *         required=false,
+     *         description="Search query for artwork name or description",
+     *         @OA\Schema(type="string", example="sunset")
+     *     ),
+     *     @OA\Parameter(
+     *         name="offset",
+     *         in="query",
+     *         required=false,
+     *         description="Pagination offset",
+     *         @OA\Schema(type="integer", example=0)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         required=false,
+     *         description="Pagination limit",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Search results with pagination",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="artworks", type="array", @OA\Items(ref="#/components/schemas/Artwork")),
+     *             @OA\Property(property="has_more", type="boolean", example=true)
+     *         )
+     *     )
+     * )
+     */
+
     public function search(Request $request)
     {
         $query = $request->query('q', '');

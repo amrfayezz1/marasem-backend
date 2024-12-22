@@ -15,6 +15,46 @@ use Http;
 
 class OrderController extends Controller
 {
+    /**
+ * @OA\Post(
+ *     path="/order",
+ *     summary="Place a new order",
+ *     tags={"Orders"},
+ *     security={{"sanctum": {}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             required={"address_id", "amount", "payment_method"},
+ *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
+ *             @OA\Property(property="amount", type="number", format="float", example=200.50, description="Total amount of the order"),
+ *             @OA\Property(property="payment_method", type="string", enum={"cash", "paymob"}, example="cash", description="Payment method")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Order placed successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="message", type="string", example="Order placed successfully. Payment is cash on delivery."),
+ *             @OA\Property(property="order", ref="#/components/schemas/Order")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access"
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid total amount"
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Payment intention creation failed"
+ *     )
+ * )
+ */
+
     public function placeOrder(Request $request)
     {
         $user = auth()->user();
@@ -182,6 +222,44 @@ class OrderController extends Controller
         return $invoice;
     }
 
+    /**
+ * @OA\Post(
+ *     path="/custom-order",
+ *     summary="Place a customized order",
+ *     tags={"Orders"},
+ *     security={{"sanctum": {}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             required={"artwork_id", "desired_size", "offering_price", "address_id"},
+ *             @OA\Property(property="artwork_id", type="integer", example=1, description="ID of the artwork for customization"),
+ *             @OA\Property(property="desired_size", type="string", example="36x48", description="Desired size of the artwork"),
+ *             @OA\Property(property="offering_price", type="number", format="float", example=300.00, description="Offered price for customization"),
+ *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
+ *             @OA\Property(property="description", type="string", nullable=true, example="I want this artwork in a larger size.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Customized order placed successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="message", type="string", example="Customized order submitted successfully."),
+ *             @OA\Property(property="customized_order", ref="#/components/schemas/CustomizedOrder")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation errors"
+ *     )
+ * )
+ */
+
     public function placeCustomOrder(Request $request)
     {
         $user = auth()->user();
@@ -214,6 +292,27 @@ class OrderController extends Controller
         ], 201);
     }
 
+    /**
+ * @OA\Get(
+ *     path="/artist/customized-orders",
+ *     summary="View customized orders for the artist",
+ *     tags={"Artist Orders"},
+ *     security={{"sanctum": {}}},
+ *     @OA\Response(
+ *         response=200,
+ *         description="Customized orders fetched successfully",
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(ref="#/components/schemas/CustomizedOrder")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access"
+ *     )
+ * )
+ */
+
     public function showCustomizedForArtist()
     {
         $user = Auth::user();
@@ -233,6 +332,42 @@ class OrderController extends Controller
             'customized_orders' => $customizedOrders,
         ]);
     }
+
+    /**
+ * @OA\Get(
+ *     path="/orders",
+ *     summary="View user orders",
+ *     tags={"Orders"},
+ *     security={{"sanctum": {}}},
+ *     @OA\Parameter(
+ *         name="order_id",
+ *         in="query",
+ *         required=false,
+ *         description="Specific order ID to view details",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Orders fetched successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="orders",
+ *                 type="array",
+ *                 @OA\Items(ref="#/components/schemas/Order")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access"
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Order not found"
+ *     )
+ * )
+ */
 
     public function viewOrders(Request $request)
     {
@@ -273,6 +408,51 @@ class OrderController extends Controller
 
         return response()->json($response);
     }
+
+    /**
+ * @OA\Get(
+ *     path="/artist/orders",
+ *     summary="View orders containing the artist's artworks",
+ *     tags={"Artist Orders"},
+ *     security={{"sanctum": {}}},
+ *     @OA\Response(
+ *         response=200,
+ *         description="Orders for the artist fetched successfully",
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(
+ *                 type="object",
+ *                 @OA\Property(property="order_id", type="integer", example=1),
+ *                 @OA\Property(
+ *                     property="items",
+ *                     type="array",
+ *                     @OA\Items(
+ *                         type="object",
+ *                         @OA\Property(property="artwork_name", type="string", example="Sunset Painting"),
+ *                         @OA\Property(property="size", type="string", example="24x36"),
+ *                         @OA\Property(property="quantity", type="integer", example=2),
+ *                         @OA\Property(property="price", type="number", example=200.50),
+ *                         @OA\Property(property="total", type="number", example=401.00)
+ *                     )
+ *                 ),
+ *                 @OA\Property(property="items_count", type="integer", example=3),
+ *                 @OA\Property(property="total", type="number", example=1200.50),
+ *                 @OA\Property(property="invoice_path", type="string", example="/invoices/12345.pdf"),
+ *                 @OA\Property(property="selected_address", ref="#/components/schemas/Address"),
+ *                 @OA\Property(property="payment_method", type="string", example="cash")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access"
+ *     ),
+ *     @OA\Response(
+ *         response=403,
+ *         description="Access restricted to artists only"
+ *     )
+ * )
+ */
 
     public function viewOrdersForArtist()
     {

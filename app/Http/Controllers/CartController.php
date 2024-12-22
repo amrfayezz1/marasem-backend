@@ -9,6 +9,49 @@ use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/cart",
+     *     summary="Add an item to the cart",
+     *     tags={"Cart"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"artwork_id", "size"},
+     *             @OA\Property(property="artwork_id", type="integer", example=1, description="ID of the artwork to add"),
+     *             @OA\Property(property="size", type="string", example="24x36", description="Selected size of the artwork"),
+     *             @OA\Property(property="quantity", type="integer", example=2, description="Quantity of the artwork to add")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Item added to cart successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Item added to cart successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="You must be logged in to add to cart.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid size selected"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
+
     public function addToCart(Request $request)
     {
         $user = Auth::user();
@@ -65,6 +108,40 @@ class CartController extends Controller
         return response()->json(['message' => 'Item added to cart successfully.']);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/cart",
+     *     summary="Remove an item from the cart",
+     *     tags={"Cart"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"artwork_id"},
+     *             @OA\Property(property="artwork_id", type="integer", example=1, description="ID of the artwork to remove"),
+     *             @OA\Property(property="size", type="string", nullable=true, example="24x36", description="Size of the artwork to remove")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Item removed from cart successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Item removed from cart successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Item not found in cart"
+     *     )
+     * )
+     */
+
     public function removeFromCart(Request $request)
     {
         $user = Auth::user();
@@ -97,6 +174,40 @@ class CartController extends Controller
         return response()->json(['message' => 'Item removed from cart successfully.']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/cart",
+     *     summary="Get all items in the user's cart",
+     *     tags={"Cart"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of items in the cart",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="cart_items",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="artwork_id", type="integer", example=1),
+     *                     @OA\Property(property="size", type="string", example="24x36"),
+     *                     @OA\Property(property="quantity", type="integer", example=2),
+     *                     @OA\Property(property="price", type="number", example=200.50)
+     *                 )
+     *             ),
+     *             @OA\Property(property="items_count", type="integer", example=3),
+     *             @OA\Property(property="total", type="number", example=601.50)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     )
+     * )
+     */
+
     public function getCartItems()
     {
         $user = Auth::user();
@@ -122,6 +233,40 @@ class CartController extends Controller
             'total' => $total
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/checkout",
+     *     summary="Get checkout data including cart items and addresses",
+     *     tags={"Cart"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Checkout data fetched successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="items_count", type="integer", example=3),
+     *             @OA\Property(property="total", type="number", example=601.50),
+     *             @OA\Property(
+     *                 property="addresses",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="city", type="string", example="Cairo"),
+     *                     @OA\Property(property="zone", type="string", example="Downtown"),
+     *                     @OA\Property(property="address", type="string", example="123 Main St"),
+     *                     @OA\Property(property="is_default", type="boolean", example=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     )
+     * )
+     */
 
     public function getCheckoutData()
     {
