@@ -75,6 +75,7 @@ Run the seeders for each class to populate the database with initial data:
 php artisan db:seed --class=CategoriesTableSeeder
 php artisan db:seed --class=TagsSeeder
 php artisan db:seed --class=CollectionsSeeder
+php artisan db:seed --class=EventSeeder
 ```
 
 ### 8. Install Node.js Dependencies
