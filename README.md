@@ -76,6 +76,7 @@ php artisan db:seed --class=CategoriesTableSeeder
 php artisan db:seed --class=TagsSeeder
 php artisan db:seed --class=CollectionsSeeder
 php artisan db:seed --class=EventSeeder
+php artisan db:seed --class=PromoCodeSeeder
 ```
 
 ### 8. Install Node.js Dependencies

@@ -14,6 +14,9 @@ class Order extends Model
         'address_id',
         'total_amount',
         'status',
+        'promo_code_id',
+        'original_total',
+        'marasem_credit_used',
     ];
 
     public function items()
@@ -40,4 +43,10 @@ class Order extends Model
     {
         return $this->hasOne(Invoice::class);
     }
+
+    public function promoCode()
+    {
+        return $this->belongsTo(PromoCode::class, 'promo_code_id');
+    }
+
 }

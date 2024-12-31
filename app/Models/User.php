@@ -27,6 +27,7 @@ class User extends Authenticatable
         'country_code',
         'profile_picture',
         'preferred_currency',
+        'marasem_credit',
     ];
 
     /**
@@ -73,5 +74,19 @@ class User extends Authenticatable
     public function artworks()
     {
         return $this->hasMany(Artwork::class, 'artist_id');
+    }
+
+    public function applyCredit($amount)
+    {
+        if ($this->marasem_credit >= $amount) {
+            $this->marasem_credit -= $amount;
+            $this->save();
+            return $amount;
+        }
+
+        $remaining = $this->marasem_credit;
+        $this->marasem_credit = 0;
+        $this->save();
+        return $remaining;
     }
 }

@@ -1557,8 +1557,20 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Get checkout data including cart items and addresses",
+                "summary": "Get checkout data including cart items, discounts, and addresses",
                 "operationId": "d42d23166d2c60e9d01b92a2ae66da9b",
+                "parameters": [
+                    {
+                        "name": "promo_code",
+                        "in": "query",
+                        "description": "Optional promo code to apply for discount",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "WELCOME10"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Checkout data fetched successfully",
@@ -1567,34 +1579,51 @@
                                 "schema": {
                                     "properties": {
                                         "items_count": {
+                                            "description": "Total number of items in the cart",
                                             "type": "integer",
                                             "example": 3
                                         },
                                         "total": {
+                                            "description": "Total amount before discounts and credits",
                                             "type": "number",
                                             "example": 601.5
+                                        },
+                                        "discount": {
+                                            "description": "Discount applied from the promo code",
+                                            "type": "number",
+                                            "example": 50
+                                        },
+                                        "marasem_credit": {
+                                            "description": "Marasem credit applied to the total",
+                                            "type": "number",
+                                            "example": 100
                                         },
                                         "addresses": {
                                             "type": "array",
                                             "items": {
                                                 "properties": {
                                                     "id": {
+                                                        "description": "Address ID",
                                                         "type": "integer",
                                                         "example": 1
                                                     },
                                                     "city": {
+                                                        "description": "City of the address",
                                                         "type": "string",
                                                         "example": "Cairo"
                                                     },
                                                     "zone": {
+                                                        "description": "Zone or area of the address",
                                                         "type": "string",
                                                         "example": "Downtown"
                                                     },
                                                     "address": {
+                                                        "description": "Detailed address",
                                                         "type": "string",
                                                         "example": "123 Main St"
                                                     },
                                                     "is_default": {
+                                                        "description": "Indicates if this is the default address",
                                                         "type": "boolean",
                                                         "example": true
                                                     }
@@ -1609,7 +1638,20 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized access"
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "You must be logged in to proceed to checkout."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2257,7 +2299,7 @@
                                         "example": 1
                                     },
                                     "amount": {
-                                        "description": "Total amount of the order",
+                                        "description": "Final total amount of the order after discounts and credits",
                                         "type": "number",
                                         "format": "float",
                                         "example": 200.5
@@ -2270,6 +2312,18 @@
                                             "paymob"
                                         ],
                                         "example": "cash"
+                                    },
+                                    "promo_code": {
+                                        "description": "Optional promo code for discount",
+                                        "type": "string",
+                                        "example": "WELCOME10",
+                                        "nullable": true
+                                    },
+                                    "use_marasem_credit": {
+                                        "description": "Optional flag to use available Marasem credit",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -2298,13 +2352,52 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized access"
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "You must be logged in to place an order."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "400": {
-                        "description": "Invalid total amount"
+                        "description": "Invalid total amount or promo code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid total amount. Expected 190.50"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Payment intention creation failed"
+                        "description": "Payment intention creation failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Failed to create payment intention."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2562,6 +2655,116 @@
                     },
                     "403": {
                         "description": "Access restricted to artists only"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/validate-promocode": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Validate a promo code",
+                "operationId": "01efc99679153a1b89966b60f55ab568",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "promo_code"
+                                ],
+                                "properties": {
+                                    "promo_code": {
+                                        "description": "The promo code to validate",
+                                        "type": "string",
+                                        "example": "WELCOME10"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Promo code is valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "promo_code": {
+                                            "description": "The validated promo code",
+                                            "type": "string",
+                                            "example": "WELCOME10"
+                                        },
+                                        "discount_type": {
+                                            "description": "The type of discount (e.g., fixed or percentage)",
+                                            "type": "string",
+                                            "example": "percentage"
+                                        },
+                                        "discount_value": {
+                                            "description": "The value of the discount",
+                                            "type": "number",
+                                            "example": 10
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Promo code not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid promo code."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Promo code is invalid or expired",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Promo code is not valid or has expired."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -3253,37 +3456,141 @@
             },
             "Order": {
                 "required": [
+                    "id",
                     "user_id",
-                    "address_id",
                     "total_amount",
                     "status"
                 ],
                 "properties": {
                     "id": {
-                        "description": "The unique identifier of the order",
+                        "description": "Unique identifier for the order",
                         "type": "integer",
                         "example": 1
                     },
                     "user_id": {
-                        "description": "The ID of the user who placed the order",
+                        "description": "ID of the user who placed the order",
                         "type": "integer",
-                        "example": 5
+                        "example": 1
                     },
                     "address_id": {
-                        "description": "The ID of the address associated with the order",
+                        "description": "ID of the address associated with the order",
                         "type": "integer",
-                        "example": 2
+                        "example": 2,
+                        "nullable": true
                     },
                     "total_amount": {
-                        "description": "The total amount of the order",
+                        "description": "Total amount of the order",
                         "type": "number",
                         "format": "float",
-                        "example": 200.5
+                        "example": 150
                     },
                     "status": {
-                        "description": "The current status of the order",
+                        "description": "Status of the order (e.g., pending, paid, failed)",
                         "type": "string",
-                        "example": "Processing"
+                        "example": "pending"
+                    },
+                    "promo_code_id": {
+                        "description": "ID of the applied promo code",
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "original_total": {
+                        "description": "Original total amount before applying discounts",
+                        "type": "number",
+                        "format": "float",
+                        "example": 200,
+                        "nullable": true
+                    },
+                    "marasem_credit_used": {
+                        "description": "Amount of Marasem credit used",
+                        "type": "number",
+                        "format": "float",
+                        "example": 50,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the order was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the order was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-10T15:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "PromoCode": {
+                "required": [
+                    "id",
+                    "code",
+                    "status",
+                    "discount_type",
+                    "discount_value"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the promo code",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "description": "Promo code",
+                        "type": "string",
+                        "example": "WELCOME10"
+                    },
+                    "usages": {
+                        "description": "Number of times the promo code has been used",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "status": {
+                        "description": "Status of the promo code (e.g., active, expired)",
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "max_usages": {
+                        "description": "Maximum number of times the promo code can be used",
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "expiry_date": {
+                        "description": "Expiry date of the promo code",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-12-31",
+                        "nullable": true
+                    },
+                    "discount_type": {
+                        "description": "Type of discount applied by the promo code",
+                        "type": "string",
+                        "enum": [
+                            "percentage",
+                            "fixed"
+                        ],
+                        "example": "percentage"
+                    },
+                    "discount_value": {
+                        "description": "Value of the discount (percentage or fixed amount)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 10
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the promo code was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the promo code was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-10T15:30:00Z"
                     }
                 },
                 "type": "object"
@@ -3525,6 +3832,12 @@
                         "type": "string",
                         "example": "USD",
                         "nullable": true
+                    },
+                    "marasem_credit": {
+                        "description": "Marasem credit balance of the user",
+                        "type": "number",
+                        "format": "float",
+                        "example": 100
                     },
                     "created_at": {
                         "description": "Timestamp when the user was created",

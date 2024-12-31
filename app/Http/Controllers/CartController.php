@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Artwork;
+use App\Models\PromoCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -237,38 +238,51 @@ class CartController extends Controller
     /**
      * @OA\Get(
      *     path="/checkout",
-     *     summary="Get checkout data including cart items and addresses",
+     *     summary="Get checkout data including cart items, discounts, and addresses",
      *     tags={"Cart"},
      *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="promo_code",
+     *         in="query",
+     *         required=false,
+     *         description="Optional promo code to apply for discount",
+     *         @OA\Schema(type="string", example="WELCOME10")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Checkout data fetched successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="items_count", type="integer", example=3),
-     *             @OA\Property(property="total", type="number", example=601.50),
+     *             @OA\Property(property="items_count", type="integer", example=3, description="Total number of items in the cart"),
+     *             @OA\Property(property="total", type="number", example=601.50, description="Total amount before discounts and credits"),
+     *             @OA\Property(property="discount", type="number", example=50.00, description="Discount applied from the promo code"),
+     *             @OA\Property(property="marasem_credit", type="number", example=100.00, description="Marasem credit applied to the total"),
      *             @OA\Property(
      *                 property="addresses",
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="city", type="string", example="Cairo"),
-     *                     @OA\Property(property="zone", type="string", example="Downtown"),
-     *                     @OA\Property(property="address", type="string", example="123 Main St"),
-     *                     @OA\Property(property="is_default", type="boolean", example=true)
+     *                     @OA\Property(property="id", type="integer", example=1, description="Address ID"),
+     *                     @OA\Property(property="city", type="string", example="Cairo", description="City of the address"),
+     *                     @OA\Property(property="zone", type="string", example="Downtown", description="Zone or area of the address"),
+     *                     @OA\Property(property="address", type="string", example="123 Main St", description="Detailed address"),
+     *                     @OA\Property(property="is_default", type="boolean", example=true, description="Indicates if this is the default address")
      *                 )
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=401,
-     *         description="Unauthorized access"
+     *         description="Unauthorized access",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="You must be logged in to proceed to checkout.")
+     *         )
      *     )
      * )
      */
 
-    public function getCheckoutData()
+    public function getCheckoutData(Request $request)
     {
         $user = Auth::user();
 
@@ -276,25 +290,32 @@ class CartController extends Controller
             return response()->json(['error' => 'You must be logged in to proceed to checkout.'], 401);
         }
 
-        // Fetch all cart items for the user
-        $cartItems = CartItem::with('artwork')
-            ->where('user_id', $user->id)
-            ->get();
+        $promoCode = $request->input('promo_code');
+        $cartItems = CartItem::with('artwork')->where('user_id', $user->id)->get();
 
-        // Calculate total and items count
         $total = $cartItems->reduce(function ($carry, $item) {
             return $carry + ($item->price * $item->quantity);
         }, 0);
 
-        $itemsCount = $cartItems->sum('quantity');
+        $discount = 0;
 
-        // Fetch stored addresses for the user
-        $addresses = $user->addresses()->get();
+        if ($promoCode) {
+            $promo = PromoCode::where('code', $promoCode)->first();
+            if ($promo && $promo->isValid()) {
+                $discount = $promo->discount_type === 'fixed'
+                    ? $promo->discount_value
+                    : $total * ($promo->discount_value / 100);
+            }
+        }
+
+        $marasemCredit = min($user->marasem_credit, $total - $discount);
 
         return response()->json([
-            'items_count' => $itemsCount,
+            'items_count' => $cartItems->sum('quantity'),
             'total' => $total,
-            'addresses' => $addresses
+            'discount' => $discount,
+            'marasem_credit' => $marasemCredit,
+            'addresses' => $user->addresses()->get(),
         ]);
     }
 }

@@ -135,12 +135,33 @@ namespace App\Http\Controllers;
  * @OA\Schema(
  *     schema="Order",
  *     type="object",
- *     required={"user_id", "address_id", "total_amount", "status"},
- *     @OA\Property(property="id", type="integer", example=1, description="The unique identifier of the order"),
- *     @OA\Property(property="user_id", type="integer", example=5, description="The ID of the user who placed the order"),
- *     @OA\Property(property="address_id", type="integer", example=2, description="The ID of the address associated with the order"),
- *     @OA\Property(property="total_amount", type="number", format="float", example=200.50, description="The total amount of the order"),
- *     @OA\Property(property="status", type="string", example="Processing", description="The current status of the order")
+ *     required={"id", "user_id", "total_amount", "status"},
+ *     @OA\Property(property="id", type="integer", example=1, description="Unique identifier for the order"),
+ *     @OA\Property(property="user_id", type="integer", example=1, description="ID of the user who placed the order"),
+ *     @OA\Property(property="address_id", type="integer", nullable=true, example=2, description="ID of the address associated with the order"),
+ *     @OA\Property(property="total_amount", type="number", format="float", example=150.00, description="Total amount of the order"),
+ *     @OA\Property(property="status", type="string", example="pending", description="Status of the order (e.g., pending, paid, failed)"),
+ *     @OA\Property(property="promo_code_id", type="integer", nullable=true, example=1, description="ID of the applied promo code"),
+ *     @OA\Property(property="original_total", type="number", format="float", nullable=true, example=200.00, description="Original total amount before applying discounts"),
+ *     @OA\Property(property="marasem_credit_used", type="number", format="float", nullable=true, example=50.00, description="Amount of Marasem credit used"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T12:00:00Z", description="Timestamp when the order was created"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-10T15:30:00Z", description="Timestamp when the order was last updated")
+ * )
+ * 
+ *  * @OA\Schema(
+ *     schema="PromoCode",
+ *     type="object",
+ *     required={"id", "code", "status", "discount_type", "discount_value"},
+ *     @OA\Property(property="id", type="integer", example=1, description="Unique identifier for the promo code"),
+ *     @OA\Property(property="code", type="string", example="WELCOME10", description="Promo code"),
+ *     @OA\Property(property="usages", type="integer", example=10, description="Number of times the promo code has been used"),
+ *     @OA\Property(property="status", type="string", example="active", description="Status of the promo code (e.g., active, expired)"),
+ *     @OA\Property(property="max_usages", type="integer", example=100, description="Maximum number of times the promo code can be used"),
+ *     @OA\Property(property="expiry_date", type="string", format="date", nullable=true, example="2024-12-31", description="Expiry date of the promo code"),
+ *     @OA\Property(property="discount_type", type="string", example="percentage", enum={"percentage", "fixed"}, description="Type of discount applied by the promo code"),
+ *     @OA\Property(property="discount_value", type="number", format="float", example=10.00, description="Value of the discount (percentage or fixed amount)"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T12:00:00Z", description="Timestamp when the promo code was created"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-10T15:30:00Z", description="Timestamp when the promo code was last updated")
  * )
  * 
  * @OA\Schema(
@@ -210,6 +231,7 @@ namespace App\Http\Controllers;
  *     @OA\Property(property="country_code", type="string", example="+1", description="The country code of the user's phone number"),
  *     @OA\Property(property="profile_picture", type="string", format="url", nullable=true, example="https://example.com/profile.jpg", description="URL to the user's profile picture"),
  *     @OA\Property(property="preferred_currency", type="string", nullable=true, example="USD", description="The user's preferred currency"),
+ *     @OA\Property(property="marasem_credit", type="number", format="float", example=100.00, description="Marasem credit balance of the user"),
  *     @OA\Property(property="created_at", type="string", format="date-time", example="2023-01-01T12:00:00Z", description="Timestamp when the user was created"),
  *     @OA\Property(property="updated_at", type="string", format="date-time", example="2023-01-10T15:30:00Z", description="Timestamp when the user was last updated")
  * )

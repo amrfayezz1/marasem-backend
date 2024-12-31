@@ -50,6 +50,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::post('/custom-order', [OrderController::class, 'placeCustomOrder']);
     Route::get('/orders', [OrderController::class, 'viewOrders']);
 
+    Route::post('/validate-promocode', [OrderController::class, 'validatePromoCode']);
+
     Route::post('/collections/{id}/follow', [CollectionController::class, 'follow']);
     Route::post('/collections/{id}/unfollow', [CollectionController::class, 'unfollow']);
 });

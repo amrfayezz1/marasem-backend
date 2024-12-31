@@ -843,7 +843,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"address_id\": 5,\r\n    \"amount\": 11000,\r\n    \"payment_method\": \"paymob\"\r\n}",
+							"raw": "{\r\n    \"address_id\": 5,\r\n    \"amount\": 2680,\r\n    \"payment_method\": \"cash\",\r\n    \"promo_code\": \"DISCOUNT10\",\r\n    \"use_marasem_credit\": true\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -889,6 +889,38 @@
 							],
 							"path": [
 								"custom-order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "apply promo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"promo_code\": \"DISCOUNT10\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{api}}/validate-promocode",
+							"host": [
+								"{{api}}"
+							],
+							"path": [
+								"validate-promocode"
 							]
 						}
 					},

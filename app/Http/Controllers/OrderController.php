@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\CartItem;
 use App\Models\Invoice;
 use App\Models\CustomizedOrder;
+use App\Models\PromoCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Http;
@@ -16,44 +17,58 @@ use Http;
 class OrderController extends Controller
 {
     /**
- * @OA\Post(
- *     path="/order",
- *     summary="Place a new order",
- *     tags={"Orders"},
- *     security={{"sanctum": {}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             required={"address_id", "amount", "payment_method"},
- *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
- *             @OA\Property(property="amount", type="number", format="float", example=200.50, description="Total amount of the order"),
- *             @OA\Property(property="payment_method", type="string", enum={"cash", "paymob"}, example="cash", description="Payment method")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Order placed successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="message", type="string", example="Order placed successfully. Payment is cash on delivery."),
- *             @OA\Property(property="order", ref="#/components/schemas/Order")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized access"
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid total amount"
- *     ),
- *     @OA\Response(
- *         response=500,
- *         description="Payment intention creation failed"
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/order",
+     *     summary="Place a new order",
+     *     tags={"Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"address_id", "amount", "payment_method"},
+     *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
+     *             @OA\Property(property="amount", type="number", format="float", example=200.50, description="Final total amount of the order after discounts and credits"),
+     *             @OA\Property(property="payment_method", type="string", enum={"cash", "paymob"}, example="cash", description="Payment method"),
+     *             @OA\Property(property="promo_code", type="string", nullable=true, example="WELCOME10", description="Optional promo code for discount"),
+     *             @OA\Property(property="use_marasem_credit", type="boolean", nullable=true, example=true, description="Optional flag to use available Marasem credit")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Order placed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Order placed successfully. Payment is cash on delivery."),
+     *             @OA\Property(property="order", ref="#/components/schemas/Order")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="You must be logged in to place an order.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid total amount or promo code",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Invalid total amount. Expected 190.50")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Payment intention creation failed",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Failed to create payment intention.")
+     *         )
+     *     )
+     * )
+     */
 
     public function placeOrder(Request $request)
     {
@@ -65,24 +80,59 @@ class OrderController extends Controller
         $validated = $request->validate([
             'address_id' => 'required|exists:addresses,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,paymob', // Support "cash" and "paymob"
+            'payment_method' => 'required|in:cash,paymob',
+            'promo_code' => 'nullable|string',
+            'use_marasem_credit' => 'nullable|boolean', // Indicates if the user wants to use credit
         ]);
 
-        // Validate the total amount against the cart
+        // Fetch cart items and calculate total
         $cartItems = CartItem::with('artwork')->where('user_id', $user->id)->get();
-        $calculatedTotal = $cartItems->reduce(function ($carry, $item) {
+
+        if ($cartItems->isEmpty()) {
+            return response()->json(['error' => 'Your cart is empty.'], 400);
+        }
+
+        $originalTotal = $cartItems->reduce(function ($carry, $item) {
             return $carry + ($item->price * $item->quantity);
         }, 0);
 
-        if ($validated['amount'] != $calculatedTotal) {
-            return response()->json(['error' => 'Invalid total amount.'], 400);
+        // Apply promo code
+        $promoCode = null;
+        $discount = 0;
+        if ($request->promo_code) {
+            $promoCode = PromoCode::where('code', $validated['promo_code'])->first();
+            if ($promoCode && $promoCode->isValid()) {
+                $discount = $promoCode->discount_type === 'fixed'
+                    ? $promoCode->discount_value
+                    : $originalTotal * ($promoCode->discount_value / 100);
+                $promoCode->increment('usages');
+            } else {
+                return response()->json(['error' => 'Invalid promo code.'], 400);
+            }
+        }
+
+        // Apply Marasem credit if requested
+        $marasemCreditUsed = 0;
+        if ($request->use_marasem_credit) {
+            $marasemCreditUsed = $user->applyCredit($originalTotal - $discount);
+        }
+
+        // Final total
+        $finalTotal = $originalTotal - $discount - $marasemCreditUsed;
+
+        if ($validated['amount'] != $finalTotal) {
+            return response()->json(['error' => "Invalid total amount. Expected $finalTotal"], 400);
         }
 
         // Create the order
         $order = Order::create([
             'user_id' => $user->id,
             'address_id' => $validated['address_id'],
-            'total_amount' => $calculatedTotal,
+            'total_amount' => $finalTotal,
+            'original_total' => $originalTotal,
+            'promo_code_id' => $promoCode?->id,
+            'marasem_credit_used' => $marasemCreditUsed,
+            'remaining_marasem_credit' => $user->marasem_credit,
             'status' => 'pending',
         ]);
 
@@ -97,20 +147,19 @@ class OrderController extends Controller
             ]);
         }
 
-        // Handle payment method
+        // Handle payment methods
         if ($validated['payment_method'] === 'cash') {
-            // Create a payment record for cash
             Payment::create([
                 'order_id' => $order->id,
                 'method' => 'cash',
-                'amount' => $calculatedTotal,
+                'amount' => $finalTotal,
                 'status' => 'pending',
             ]);
 
             // Generate Invoice
             $this->generateInvoice($order, $cartItems, $user);
 
-            // Clear the user's cart
+            // Clear the cart
             CartItem::where('user_id', $user->id)->delete();
 
             return response()->json([
@@ -119,9 +168,8 @@ class OrderController extends Controller
             ]);
         }
 
-        // Handle Paymob payment method
         if ($validated['payment_method'] === 'paymob') {
-            $paymobResponse = $this->createPaymobIntention($order, $cartItems, $calculatedTotal, $user);
+            $paymobResponse = $this->createPaymobIntention($order, $cartItems, $finalTotal, $user);
             if (!$paymobResponse) {
                 return response()->json(['error' => 'Failed to create payment intention.'], 500);
             }
@@ -223,42 +271,42 @@ class OrderController extends Controller
     }
 
     /**
- * @OA\Post(
- *     path="/custom-order",
- *     summary="Place a customized order",
- *     tags={"Orders"},
- *     security={{"sanctum": {}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             required={"artwork_id", "desired_size", "offering_price", "address_id"},
- *             @OA\Property(property="artwork_id", type="integer", example=1, description="ID of the artwork for customization"),
- *             @OA\Property(property="desired_size", type="string", example="36x48", description="Desired size of the artwork"),
- *             @OA\Property(property="offering_price", type="number", format="float", example=300.00, description="Offered price for customization"),
- *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
- *             @OA\Property(property="description", type="string", nullable=true, example="I want this artwork in a larger size.")
- *         )
- *     ),
- *     @OA\Response(
- *         response=201,
- *         description="Customized order placed successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="message", type="string", example="Customized order submitted successfully."),
- *             @OA\Property(property="customized_order", ref="#/components/schemas/CustomizedOrder")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized access"
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation errors"
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/custom-order",
+     *     summary="Place a customized order",
+     *     tags={"Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"artwork_id", "desired_size", "offering_price", "address_id"},
+     *             @OA\Property(property="artwork_id", type="integer", example=1, description="ID of the artwork for customization"),
+     *             @OA\Property(property="desired_size", type="string", example="36x48", description="Desired size of the artwork"),
+     *             @OA\Property(property="offering_price", type="number", format="float", example=300.00, description="Offered price for customization"),
+     *             @OA\Property(property="address_id", type="integer", example=1, description="ID of the address for delivery"),
+     *             @OA\Property(property="description", type="string", nullable=true, example="I want this artwork in a larger size.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Customized order placed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Customized order submitted successfully."),
+     *             @OA\Property(property="customized_order", ref="#/components/schemas/CustomizedOrder")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
 
     public function placeCustomOrder(Request $request)
     {
@@ -293,25 +341,25 @@ class OrderController extends Controller
     }
 
     /**
- * @OA\Get(
- *     path="/artist/customized-orders",
- *     summary="View customized orders for the artist",
- *     tags={"Artist Orders"},
- *     security={{"sanctum": {}}},
- *     @OA\Response(
- *         response=200,
- *         description="Customized orders fetched successfully",
- *         @OA\JsonContent(
- *             type="array",
- *             @OA\Items(ref="#/components/schemas/CustomizedOrder")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized access"
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/artist/customized-orders",
+     *     summary="View customized orders for the artist",
+     *     tags={"Artist Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Customized orders fetched successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/CustomizedOrder")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     )
+     * )
+     */
 
     public function showCustomizedForArtist()
     {
@@ -334,40 +382,40 @@ class OrderController extends Controller
     }
 
     /**
- * @OA\Get(
- *     path="/orders",
- *     summary="View user orders",
- *     tags={"Orders"},
- *     security={{"sanctum": {}}},
- *     @OA\Parameter(
- *         name="order_id",
- *         in="query",
- *         required=false,
- *         description="Specific order ID to view details",
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Orders fetched successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="orders",
- *                 type="array",
- *                 @OA\Items(ref="#/components/schemas/Order")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized access"
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Order not found"
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/orders",
+     *     summary="View user orders",
+     *     tags={"Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="order_id",
+     *         in="query",
+     *         required=false,
+     *         description="Specific order ID to view details",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Orders fetched successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="orders",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Order")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Order not found"
+     *     )
+     * )
+     */
 
     public function viewOrders(Request $request)
     {
@@ -410,49 +458,49 @@ class OrderController extends Controller
     }
 
     /**
- * @OA\Get(
- *     path="/artist/orders",
- *     summary="View orders containing the artist's artworks",
- *     tags={"Artist Orders"},
- *     security={{"sanctum": {}}},
- *     @OA\Response(
- *         response=200,
- *         description="Orders for the artist fetched successfully",
- *         @OA\JsonContent(
- *             type="array",
- *             @OA\Items(
- *                 type="object",
- *                 @OA\Property(property="order_id", type="integer", example=1),
- *                 @OA\Property(
- *                     property="items",
- *                     type="array",
- *                     @OA\Items(
- *                         type="object",
- *                         @OA\Property(property="artwork_name", type="string", example="Sunset Painting"),
- *                         @OA\Property(property="size", type="string", example="24x36"),
- *                         @OA\Property(property="quantity", type="integer", example=2),
- *                         @OA\Property(property="price", type="number", example=200.50),
- *                         @OA\Property(property="total", type="number", example=401.00)
- *                     )
- *                 ),
- *                 @OA\Property(property="items_count", type="integer", example=3),
- *                 @OA\Property(property="total", type="number", example=1200.50),
- *                 @OA\Property(property="invoice_path", type="string", example="/invoices/12345.pdf"),
- *                 @OA\Property(property="selected_address", ref="#/components/schemas/Address"),
- *                 @OA\Property(property="payment_method", type="string", example="cash")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized access"
- *     ),
- *     @OA\Response(
- *         response=403,
- *         description="Access restricted to artists only"
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/artist/orders",
+     *     summary="View orders containing the artist's artworks",
+     *     tags={"Artist Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Orders for the artist fetched successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="order_id", type="integer", example=1),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="artwork_name", type="string", example="Sunset Painting"),
+     *                         @OA\Property(property="size", type="string", example="24x36"),
+     *                         @OA\Property(property="quantity", type="integer", example=2),
+     *                         @OA\Property(property="price", type="number", example=200.50),
+     *                         @OA\Property(property="total", type="number", example=401.00)
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="items_count", type="integer", example=3),
+     *                 @OA\Property(property="total", type="number", example=1200.50),
+     *                 @OA\Property(property="invoice_path", type="string", example="/invoices/12345.pdf"),
+     *                 @OA\Property(property="selected_address", ref="#/components/schemas/Address"),
+     *                 @OA\Property(property="payment_method", type="string", example="cash")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Access restricted to artists only"
+     *     )
+     * )
+     */
 
     public function viewOrdersForArtist()
     {
@@ -497,5 +545,84 @@ class OrderController extends Controller
         });
 
         return response()->json($response);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/validate-promocode",
+     *     summary="Validate a promo code",
+     *     tags={"Orders"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"promo_code"},
+     *             @OA\Property(
+     *                 property="promo_code",
+     *                 type="string",
+     *                 example="WELCOME10",
+     *                 description="The promo code to validate"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Promo code is valid",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="promo_code", type="string", example="WELCOME10", description="The validated promo code"),
+     *             @OA\Property(property="discount_type", type="string", example="percentage", description="The type of discount (e.g., fixed or percentage)"),
+     *             @OA\Property(property="discount_value", type="number", example=10, description="The value of the discount")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Promo code not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Invalid promo code.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Promo code is invalid or expired",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Promo code is not valid or has expired.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+
+    public function validatePromoCode(Request $request)
+    {
+        $validated = $request->validate([
+            'promo_code' => 'required|string',
+        ]);
+
+        $promoCode = PromoCode::where('code', $validated['promo_code'])->first();
+
+        if (!$promoCode) {
+            return response()->json(['error' => 'Invalid promo code.'], 404);
+        }
+
+        if (!$promoCode->isValid()) {
+            return response()->json(['error' => 'Promo code is not valid or has expired.'], 400);
+        }
+
+        return response()->json([
+            'promo_code' => $promoCode->code,
+            'discount_type' => $promoCode->discount_type,
+            'discount_value' => $promoCode->discount_value,
+        ]);
     }
 }
