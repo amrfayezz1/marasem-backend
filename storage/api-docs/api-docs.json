@@ -160,6 +160,1299 @@
                 ]
             }
         },
+        "/addresses/{id}": {
+            "put": {
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Update an existing address",
+                "operationId": "46a5db4761fba5463c3510212d68b8ec",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the address to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "city": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Giza",
+                                        "nullable": true
+                                    },
+                                    "zone": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Dokki",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "456 Elm St",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John's Apartment",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "+201234567890",
+                                        "nullable": true
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "maxLength": 5,
+                                        "example": "+20",
+                                        "nullable": true
+                                    },
+                                    "is_default": {
+                                        "description": "Set as default address",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address updated successfully."
+                                        },
+                                        "address": {
+                                            "$ref": "#/components/schemas/Address"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Address not found"
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Delete an address",
+                "operationId": "7d0377e79c03534675ea7ce1b91c86e1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the address to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Address deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Address not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Address not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artists": {
+            "get": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Get a list of artists",
+                "operationId": "bcf9453d4eb5717e1220304e5becb87c",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by artist's name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John Doe"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "description": "Filter by tag IDs",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer",
+                                "example": 1
+                            }
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by specific field",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "followers",
+                                "appreciations",
+                                "profile_views"
+                            ],
+                            "example": "followers"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of artists per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of artists retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ArtistDetail"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/artists/{id}/follow": {
+            "post": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Follow an artist",
+                "operationId": "4e85e4c441e312128542f7b469e973ef",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artist to follow",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artist followed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artist followed successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artist not found"
+                    },
+                    "400": {
+                        "description": "Cannot follow the artist"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artists/{id}/unfollow": {
+            "post": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Unfollow an artist",
+                "operationId": "77070dc03a409ab44eac24354d7ebf4f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artist to unfollow",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artist unfollowed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artist unfollowed successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artist not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artists/{id}": {
+            "get": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Get detailed information about an artist",
+                "operationId": "9746dc98c05ad6087ae4bb50ab0f1678",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artist",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artist details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "artist": {
+                                            "$ref": "#/components/schemas/ArtistDetail"
+                                        },
+                                        "artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "liked_artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "sold_out_artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "artwork_views": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "appreciations": {
+                                            "type": "integer",
+                                            "example": 10
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artist not found"
+                    }
+                }
+            }
+        },
+        "/customized-orders/{id}/respond": {
+            "post": {
+                "tags": [
+                    "Artists"
+                ],
+                "summary": "Respond to a customized order",
+                "operationId": "921276dfcc59914b4bd0b434edbe2ee7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the customized order",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "action"
+                                ],
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "enum": [
+                                            "accept",
+                                            "reject"
+                                        ],
+                                        "example": "accept"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Response to the customized order",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customized order accepted successfully."
+                                        },
+                                        "order": {
+                                            "$ref": "#/components/schemas/Order"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Customized order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/general-info": {
+            "post": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Update the general information of the artist",
+                "operationId": "e15b067d7993aa1e601f423a3b3ffb61",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "country_code",
+                                    "phone",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+1"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123",
+                                        "nullable": true
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "example": "password123",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "General information updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "General information updated successfully."
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/about-me": {
+            "post": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Update the artist's About Me section",
+                "operationId": "8d48d811a186e5056289252727521ebf",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "summary": {
+                                        "type": "string",
+                                        "example": "I am a passionate artist.",
+                                        "nullable": true
+                                    },
+                                    "social_media_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://instagram.com/johndoe",
+                                        "nullable": true
+                                    },
+                                    "portfolio_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://portfolio.com/johndoe",
+                                        "nullable": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://johndoe.com",
+                                        "nullable": true
+                                    },
+                                    "other_link": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://other.com/johndoe",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "About Me updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "About me updated successfully."
+                                        },
+                                        "artistDetails": {
+                                            "$ref": "#/components/schemas/ArtistDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/pickup-location": {
+            "post": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Update the artist's pickup location",
+                "operationId": "8377b0363078921fed9e48a42e1f25eb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "city",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Cairo"
+                                    },
+                                    "zone": {
+                                        "type": "string",
+                                        "example": "Downtown",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pickup location updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pick-up location added successfully."
+                                        },
+                                        "pickup_location": {
+                                            "$ref": "#/components/schemas/ArtistPickupLocation"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/focus": {
+            "get": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Get the artist's focus tags and available categories",
+                "operationId": "0dd30bfb5a9f3377c05e0a3ec20f56f8",
+                "responses": {
+                    "200": {
+                        "description": "Focus and categories retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Category"
+                                            }
+                                        },
+                                        "user_tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Update the artist's focus tags",
+                "operationId": "36d6f4970ced49730fb5e6506bb5510b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "tags"
+                                ],
+                                "properties": {
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Focus updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Focus updated successfully."
+                                        },
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Tag"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/cover-image": {
+            "post": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Update the artist's cover image",
+                "operationId": "cd7175e264aebe5a8993b75baa9dfb0c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "cover_img": {
+                                        "description": "Image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cover image updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cover image updated successfully."
+                                        },
+                                        "cover_img": {
+                                            "type": "string",
+                                            "format": "url",
+                                            "example": "https://example.com/cover.jpg"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/my-orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get the list of orders associated with the artist",
+                "operationId": "458bd3fb5720e3d412ab4b71ae664156",
+                "responses": {
+                    "200": {
+                        "description": "Orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "standard_orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Order #1"
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-01-01"
+                                                    },
+                                                    "artworks_count": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "total_price": {
+                                                        "type": "number",
+                                                        "example": 500.75
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "pending"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "customized_orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Customized Order #5"
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-01-01"
+                                                    },
+                                                    "artwork": {
+                                                        "type": "string",
+                                                        "example": "Custom Portrait"
+                                                    },
+                                                    "desired_size": {
+                                                        "type": "string",
+                                                        "example": "24x36"
+                                                    },
+                                                    "offering_price": {
+                                                        "type": "number",
+                                                        "example": 750.5
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "accepted"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/customized-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get details of a specific customized order",
+                "operationId": "76b3700f3b414b153a21186d4549bd36",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the customized order",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Customized order details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "customized_order_details": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Customized Order #5"
+                                                },
+                                                "order_id": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "date": {
+                                                    "type": "string",
+                                                    "format": "datetime",
+                                                    "example": "2024-01-01 12:00:00"
+                                                },
+                                                "artwork_name": {
+                                                    "type": "string",
+                                                    "example": "Custom Portrait"
+                                                },
+                                                "desired_size": {
+                                                    "type": "string",
+                                                    "example": "24x36"
+                                                },
+                                                "offering_price": {
+                                                    "type": "number",
+                                                    "example": 750.5
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "accepted"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Special request for custom colors."
+                                                },
+                                                "address": {
+                                                    "$ref": "#/components/schemas/Address"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Customized order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/my-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get details of a specific standard order",
+                "operationId": "c5752126d3b03c292a34b060bec7a124",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the order",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "order_details": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Order #1"
+                                                },
+                                                "order_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "completed"
+                                                },
+                                                "date": {
+                                                    "type": "string",
+                                                    "format": "datetime",
+                                                    "example": "2024-01-01 12:00:00"
+                                                },
+                                                "shipment_address": {
+                                                    "$ref": "#/components/schemas/Address"
+                                                },
+                                                "payment_method": {
+                                                    "type": "string",
+                                                    "example": "cash"
+                                                },
+                                                "invoice_link": {
+                                                    "type": "string",
+                                                    "format": "url",
+                                                    "example": "https://example.com/invoice.pdf",
+                                                    "nullable": true
+                                                },
+                                                "price_breakdown": {
+                                                    "properties": {
+                                                        "artworks_total": {
+                                                            "type": "number",
+                                                            "example": 750.5
+                                                        },
+                                                        "marasem_credit_used": {
+                                                            "type": "number",
+                                                            "example": 50
+                                                        },
+                                                        "promo_discount": {
+                                                            "type": "number",
+                                                            "example": 25
+                                                        },
+                                                        "promo_type": {
+                                                            "type": "string",
+                                                            "example": "fixed"
+                                                        },
+                                                        "final_total": {
+                                                            "type": "number",
+                                                            "example": 675.5
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "artworks": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "image": {
+                                                                "type": "string",
+                                                                "format": "url",
+                                                                "example": "https://example.com/image.jpg"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Sunset Painting"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "Painting"
+                                                            },
+                                                            "size": {
+                                                                "type": "string",
+                                                                "example": "24x36"
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "example": 250.5
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "available"
+                                                            },
+                                                            "artist": {
+                                                                "$ref": "#/components/schemas/User"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/available-balance": {
+            "get": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Get the artist's available Marasem Credit balance and transactions",
+                "operationId": "8cd7e880701695ed64be1bb3e1abd866",
+                "responses": {
+                    "200": {
+                        "description": "Balance and transactions retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "marasem_credit": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "transactions": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "debit"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "example": 50
+                                                    },
+                                                    "reference": {
+                                                        "type": "string",
+                                                        "example": "Order #1"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Payment for Order #1"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "datetime",
+                                                        "example": "2024-01-01 12:00:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/artworks": {
             "get": {
                 "tags": [
@@ -381,6 +1674,223 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artworks/{id}": {
+            "get": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "View a specific artwork",
+                "operationId": "4ace6e276c6a3e2c97e05ecbfc769f28",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artwork to view",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artwork details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Artwork"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artwork not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Update an existing artwork",
+                "operationId": "79546c225ef43d084e8e10b893f2c17e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artwork to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Sunset Painting",
+                                        "nullable": true
+                                    },
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "art_type": {
+                                        "type": "string",
+                                        "example": "Painting",
+                                        "nullable": true
+                                    },
+                                    "artwork_status": {
+                                        "type": "string",
+                                        "example": "Available",
+                                        "nullable": true
+                                    },
+                                    "sizes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "24x36"
+                                        }
+                                    },
+                                    "prices": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 200.5
+                                        }
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "A beautiful sunset painting.",
+                                        "nullable": true
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "collections": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "customizable": {
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "duration": {
+                                        "description": "Required if customizable is true",
+                                        "type": "string",
+                                        "example": "7 days",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Artwork updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artwork updated successfully."
+                                        },
+                                        "artwork": {
+                                            "$ref": "#/components/schemas/Artwork"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized to update this artwork"
+                    },
+                    "404": {
+                        "description": "Artwork not found"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Artworks"
+                ],
+                "summary": "Delete an artwork",
+                "operationId": "0af1372e7415a63a02f74ff90306f673",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the artwork to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artwork deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artwork deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized to delete this artwork"
+                    },
+                    "404": {
+                        "description": "Artwork not found"
                     }
                 },
                 "security": [
@@ -3046,6 +4556,22 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "You must be logged in to change currency."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Validation errors",
                         "content": {
@@ -3054,6 +4580,665 @@
                                     "properties": {
                                         "errors": {
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/artist/profile": {
+            "get": {
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "Fetch the logged-in artist's profile and insights",
+                "operationId": "51a6dcb16273ee672a3565c710dbab9f",
+                "responses": {
+                    "200": {
+                        "description": "Artist profile fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "artist": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "drafts": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "to_do": {
+                                            "type": "object"
+                                        },
+                                        "liked_artworks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Artwork"
+                                            }
+                                        },
+                                        "insights": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artist not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Artist not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/profile-picture": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update the user's profile picture",
+                "operationId": "76e08c39a6e424a0476c3e097d7f0d8b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "profile_picture": {
+                                        "description": "Image file for the profile picture.",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile picture updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profile picture updated successfully."
+                                        },
+                                        "profile_picture": {
+                                            "type": "string",
+                                            "example": "https://example.com/profile.jpg"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unauthorized."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/info": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Fetch the logged-in user's profile information",
+                "operationId": "4f906cded95312491c79c9894adea598",
+                "responses": {
+                    "200": {
+                        "description": "User info fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "followed_artists": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            }
+                                        },
+                                        "addresses": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Address"
+                                            }
+                                        },
+                                        "orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Order"
+                                            }
+                                        },
+                                        "followed_collections": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Collection"
+                                            }
+                                        },
+                                        "credit_transactions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CreditTransaction"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/update": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update the logged-in user's profile information",
+                "operationId": "1e97ba4bfea198e664de34b0dbdd4295",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "country_code",
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+1"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profile updated successfully."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "422": {
+                        "description": "Validation errors"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Retrieve the list of orders for the logged-in user",
+                "operationId": "f8c3d494cfcf613727f8755b957a220f",
+                "responses": {
+                    "200": {
+                        "description": "List of standard and customized orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "standard_orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Order #1"
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "2023-12-20"
+                                                    },
+                                                    "artworks_count": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "total_price": {
+                                                        "type": "number",
+                                                        "example": 250.75
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "completed"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "customized_orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Customized Order #5"
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "2023-12-21"
+                                                    },
+                                                    "artwork": {
+                                                        "type": "string",
+                                                        "example": "Sunset Painting"
+                                                    },
+                                                    "desired_size": {
+                                                        "type": "string",
+                                                        "example": "24x36"
+                                                    },
+                                                    "offering_price": {
+                                                        "type": "number",
+                                                        "example": 300
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "pending"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unauthorized access."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Retrieve details of a specific order",
+                "operationId": "d55a2c05bef923666c72ebe82cd72841",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID to fetch details for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "order_details": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Order #1"
+                                                },
+                                                "order_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "completed"
+                                                },
+                                                "date": {
+                                                    "type": "string",
+                                                    "example": "2023-12-20 14:32:00"
+                                                },
+                                                "shipment_address": {
+                                                    "$ref": "#/components/schemas/Address"
+                                                },
+                                                "payment_method": {
+                                                    "type": "string",
+                                                    "example": "cash"
+                                                },
+                                                "invoice_link": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/invoice.pdf"
+                                                },
+                                                "price_breakdown": {
+                                                    "properties": {
+                                                        "artworks_total": {
+                                                            "type": "number",
+                                                            "example": 250
+                                                        },
+                                                        "marasem_credit_used": {
+                                                            "type": "number",
+                                                            "example": 10
+                                                        },
+                                                        "promo_discount": {
+                                                            "type": "number",
+                                                            "example": 20
+                                                        },
+                                                        "promo_type": {
+                                                            "type": "string",
+                                                            "example": "fixed"
+                                                        },
+                                                        "final_total": {
+                                                            "type": "number",
+                                                            "example": 220
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "artworks": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "image": {
+                                                                "type": "string",
+                                                                "example": "https://example.com/artwork.jpg"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Abstract Art"
+                                                            },
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "Painting"
+                                                            },
+                                                            "size": {
+                                                                "type": "string",
+                                                                "example": "24x36"
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "example": 125
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "ready to ship"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Order not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user/customized-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Retrieve details of a specific customized order",
+                "operationId": "620288790f9210e25402e84bbe89f42a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customized order ID to fetch details for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Customized order details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "customized_order_details": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Customized Order #5"
+                                                },
+                                                "order_id": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "date": {
+                                                    "type": "string",
+                                                    "example": "2023-12-21 10:15:00"
+                                                },
+                                                "artwork_name": {
+                                                    "type": "string",
+                                                    "example": "Sunset Painting"
+                                                },
+                                                "desired_size": {
+                                                    "type": "string",
+                                                    "example": "24x36"
+                                                },
+                                                "offering_price": {
+                                                    "type": "number",
+                                                    "example": 300
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "I want a larger version of this painting."
+                                                },
+                                                "address": {
+                                                    "$ref": "#/components/schemas/Address"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access"
+                    },
+                    "404": {
+                        "description": "Customized order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Customized order not found."
                                         }
                                     },
                                     "type": "object"
@@ -3184,6 +5369,16 @@
                         "description": "Indicates if the artist registration is completed",
                         "type": "boolean",
                         "example": false
+                    },
+                    "profile_views": {
+                        "description": "The number of views on the artist's profile",
+                        "type": "integer",
+                        "example": 200
+                    },
+                    "appreciations_count": {
+                        "description": "The number of appreciations received by the artist",
+                        "type": "integer",
+                        "example": 50
                     }
                 },
                 "type": "object"
@@ -3459,7 +5654,8 @@
                     "id",
                     "user_id",
                     "total_amount",
-                    "status"
+                    "status",
+                    "order_status"
                 ],
                 "properties": {
                     "id": {
@@ -3485,9 +5681,14 @@
                         "example": 150
                     },
                     "status": {
-                        "description": "Status of the order (e.g., pending, paid, failed)",
+                        "description": "Payment status of the order",
                         "type": "string",
                         "example": "pending"
+                    },
+                    "order_status": {
+                        "description": "Overall status of the order (e.g., processing, completed)",
+                        "type": "string",
+                        "example": "processing"
                     },
                     "promo_code_id": {
                         "description": "ID of the applied promo code",
@@ -3977,6 +6178,115 @@
                     }
                 },
                 "type": "object"
+            },
+            "CreditTransaction": {
+                "required": [
+                    "user_id",
+                    "type",
+                    "amount",
+                    "reference"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the credit transaction",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "description": "The ID of the user associated with the transaction",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "type": {
+                        "description": "The type of transaction (e.g., Buy, Credit)",
+                        "type": "string",
+                        "example": "Buy"
+                    },
+                    "amount": {
+                        "description": "The amount of the transaction",
+                        "type": "number",
+                        "format": "float",
+                        "example": 100
+                    },
+                    "reference": {
+                        "description": "The reference for the transaction",
+                        "type": "string",
+                        "example": "Order #123"
+                    },
+                    "description": {
+                        "description": "Details about the transaction",
+                        "type": "string",
+                        "example": "Used credit for purchasing an order"
+                    },
+                    "expiry_date": {
+                        "description": "The expiry date of the transaction, if applicable",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-12-31",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the transaction was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the transaction was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-10T15:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "ArtistPickupLocation": {
+                "required": [
+                    "artist_id",
+                    "city",
+                    "address"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the pickup location",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "artist_id": {
+                        "description": "The ID of the artist associated with the pickup location",
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "city": {
+                        "description": "The city where the pickup location is located",
+                        "type": "string",
+                        "example": "Cairo"
+                    },
+                    "zone": {
+                        "description": "The zone within the city for the pickup location",
+                        "type": "string",
+                        "example": "Downtown",
+                        "nullable": true
+                    },
+                    "address": {
+                        "description": "The full address of the pickup location",
+                        "type": "string",
+                        "example": "123 Main St, Cairo"
+                    },
+                    "created_at": {
+                        "description": "Timestamp when the pickup location was created",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Timestamp when the pickup location was last updated",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-10T15:30:00Z"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -3992,6 +6302,18 @@
         {
             "name": "Address",
             "description": "Address"
+        },
+        {
+            "name": "Artists",
+            "description": "Artists"
+        },
+        {
+            "name": "Artist",
+            "description": "Artist"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
         },
         {
             "name": "Artworks",
@@ -4024,10 +6346,6 @@
         {
             "name": "Filters",
             "description": "Filters"
-        },
-        {
-            "name": "Orders",
-            "description": "Orders"
         },
         {
             "name": "Artist Orders",

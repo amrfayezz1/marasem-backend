@@ -89,4 +89,30 @@ class User extends Authenticatable
         $this->save();
         return $remaining;
     }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'artist_id', 'user_id');
+    }
+
+    public function isFollowedBy(User $user)
+    {
+        return $this->followers()->where('user_id', $user->id)->exists();
+    }
+
+    public function getIsFollowedAttribute()
+    {
+        $user = auth('sanctum')->user();
+        if (!$user) {
+            return false;
+        }
+
+        // Check if the logged-in user follows this artist
+        return $this->followers()->where('user_id', $user->id)->exists();
+    }
+
+    public function follows()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'user_id', 'artist_id');
+    }
 }

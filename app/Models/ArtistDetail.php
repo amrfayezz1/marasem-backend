@@ -18,6 +18,8 @@ class ArtistDetail extends Model
         'summary',
         'registration_step',
         'completed',
+        'profile_views',
+        'appreciations_count'
     ];
 
     /**
@@ -26,5 +28,10 @@ class ArtistDetail extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function pickupLocation()
+    {
+        return $this->hasOne(ArtistPickupLocation::class, 'artist_id');
     }
 }

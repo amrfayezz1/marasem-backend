@@ -10,6 +10,7 @@ use App\Models\CartItem;
 use App\Models\Invoice;
 use App\Models\CustomizedOrder;
 use App\Models\PromoCode;
+use App\Models\CreditTransaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Http;
@@ -121,6 +122,8 @@ class OrderController extends Controller
         $finalTotal = $originalTotal - $discount - $marasemCreditUsed;
 
         if ($validated['amount'] != $finalTotal) {
+            $user->marasem_credit += $marasemCreditUsed;
+            $user->save();
             return response()->json(['error' => "Invalid total amount. Expected $finalTotal"], 400);
         }
 
@@ -136,9 +139,19 @@ class OrderController extends Controller
             'status' => 'pending',
         ]);
 
+        if ($marasemCreditUsed > 0) {
+            CreditTransaction::create([
+                'user_id' => $user->id,
+                'type' => 'Buy',
+                'amount' => -$marasemCreditUsed, // Deduction
+                'reference' => "Order #{$order->id}",
+                'description' => 'Used Marasem Credit for order payment.',
+            ]);
+        }
+
         // Add order items
         foreach ($cartItems as $cartItem) {
-            OrderItem::create([
+            $item = OrderItem::create([
                 'order_id' => $order->id,
                 'artwork_id' => $cartItem->artwork_id,
                 'size' => $cartItem->size,
@@ -169,7 +182,7 @@ class OrderController extends Controller
         }
 
         if ($validated['payment_method'] === 'paymob') {
-            $paymobResponse = $this->createPaymobIntention($order, $cartItems, $finalTotal, $user);
+            $paymobResponse = $this->createPaymobIntention($order, $cartItems, $finalTotal, $user, $originalTotal, $originalTotal - $finalTotal);
             if (!$paymobResponse) {
                 return response()->json(['error' => 'Failed to create payment intention.'], 500);
             }
@@ -182,7 +195,7 @@ class OrderController extends Controller
         }
     }
 
-    protected function createPaymobIntention($order, $cartItems, $totalAmount, $user)
+    protected function createPaymobIntention($order, $cartItems, $totalAmount, $user, $originalTotal, $discount)
     {
         $paymobUrl = "https://accept.paymob.com/v1/intention/";
         $paymobSecretKey = config('services.paymob.secret_key');
@@ -191,14 +204,40 @@ class OrderController extends Controller
         $paymobApiKey = config('services.paymob.api_key');
 
         // Build request payload
-        $items = $cartItems->map(function ($item) {
+        $totalDiscount = $discount;
+        $remainingDiscount = $totalDiscount;
+
+        $items = $cartItems->map(function ($item, $index) use ($totalDiscount, $originalTotal, &$remainingDiscount, $cartItems) {
+            if ($totalDiscount > 0) {
+                $proportionalDiscount = ($totalDiscount / $originalTotal) * $item->price;
+            } else {
+                $proportionalDiscount = 0;
+            }
+
+            $discountedPrice = max($item->price - $proportionalDiscount, 0);
+            $discountedAmountCents = round($discountedPrice * 100);
+            $remainingDiscount -= $proportionalDiscount;
+
+            // Adjust the last item to ensure total matches
+            if ($index === $cartItems->count() - 1 && $remainingDiscount > 0) {
+                $discountedAmountCents -= round($remainingDiscount * 100);
+            }
+
             return [
                 'name' => $item->artwork->name,
-                'amount' => $item->price * 100, // Convert to cents
+                'amount' => $discountedAmountCents,
                 'description' => $item->artwork->description ?? 'Artwork item',
                 'quantity' => $item->quantity,
             ];
         })->toArray();
+
+        // Calculate total from items to validate consistency
+        $calculatedTotal = array_sum(array_column($items, 'amount')) / 100;
+        if ($calculatedTotal != $totalAmount) {
+            \Log::error($items);
+            \Log::error("Calculated total ({$calculatedTotal}) does not match expected total ({$totalAmount}).");
+            return null;
+        }
 
         $payload = [
             'amount' => $totalAmount * 100, // Convert to cents

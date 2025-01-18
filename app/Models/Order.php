@@ -13,10 +13,12 @@ class Order extends Model
         'user_id',
         'address_id',
         'total_amount',
-        'status',
+        'status', // Payment status
+        'order_status', // New column for order status
         'promo_code_id',
         'original_total',
         'marasem_credit_used',
+        'original_total',
     ];
 
     public function items()

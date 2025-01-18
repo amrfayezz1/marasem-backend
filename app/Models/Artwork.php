@@ -99,4 +99,8 @@ class Artwork extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function orders()
+    {
+        return $this->hasManyThrough(Order::class, OrderItem::class, 'artwork_id', 'id', 'id', 'order_id');
+    }
 }

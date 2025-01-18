@@ -56,7 +56,9 @@ namespace App\Http\Controllers;
  *     @OA\Property(property="other_link", type="string", nullable=true, example="https://example.com", description="Other links related to the artist"),
  *     @OA\Property(property="summary", type="string", nullable=true, example="Experienced artist specializing in watercolor paintings.", description="A summary about the artist"),
  *     @OA\Property(property="registration_step", type="integer", example=2, description="The current registration step for the artist"),
- *     @OA\Property(property="completed", type="boolean", example=false, description="Indicates if the artist registration is completed")
+ *     @OA\Property(property="completed", type="boolean", example=false, description="Indicates if the artist registration is completed"),
+ *     @OA\Property(property="profile_views", type="integer", example=200, description="The number of views on the artist's profile"),
+ *     @OA\Property(property="appreciations_count", type="integer", example=50, description="The number of appreciations received by the artist")
  * )
  * 
  * @OA\Schema(
@@ -135,12 +137,13 @@ namespace App\Http\Controllers;
  * @OA\Schema(
  *     schema="Order",
  *     type="object",
- *     required={"id", "user_id", "total_amount", "status"},
+ *     required={"id", "user_id", "total_amount", "status", "order_status"},
  *     @OA\Property(property="id", type="integer", example=1, description="Unique identifier for the order"),
  *     @OA\Property(property="user_id", type="integer", example=1, description="ID of the user who placed the order"),
  *     @OA\Property(property="address_id", type="integer", nullable=true, example=2, description="ID of the address associated with the order"),
  *     @OA\Property(property="total_amount", type="number", format="float", example=150.00, description="Total amount of the order"),
- *     @OA\Property(property="status", type="string", example="pending", description="Status of the order (e.g., pending, paid, failed)"),
+ *     @OA\Property(property="status", type="string", example="pending", description="Payment status of the order"),
+ *     @OA\Property(property="order_status", type="string", example="processing", description="Overall status of the order (e.g., processing, completed)"),
  *     @OA\Property(property="promo_code_id", type="integer", nullable=true, example=1, description="ID of the applied promo code"),
  *     @OA\Property(property="original_total", type="number", format="float", nullable=true, example=200.00, description="Original total amount before applying discounts"),
  *     @OA\Property(property="marasem_credit_used", type="number", format="float", nullable=true, example=50.00, description="Amount of Marasem credit used"),
@@ -263,6 +266,35 @@ namespace App\Http\Controllers;
  *     @OA\Property(property="title", type="string", example="Nature Collection", description="The title of the collection"),
  *     @OA\Property(property="tags", type="array", @OA\Items(type="string", example="Landscape"), nullable=true, description="An array of tags associated with the collection"),
  *     @OA\Property(property="followers", type="integer", example=100, description="The number of followers of the collection")
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="CreditTransaction",
+ *     type="object",
+ *     required={"user_id", "type", "amount", "reference"},
+ *     @OA\Property(property="id", type="integer", example=1, description="The unique identifier of the credit transaction"),
+ *     @OA\Property(property="user_id", type="integer", example=5, description="The ID of the user associated with the transaction"),
+ *     @OA\Property(property="type", type="string", example="Buy", description="The type of transaction (e.g., Buy, Credit)"),
+ *     @OA\Property(property="amount", type="number", format="float", example=100.00, description="The amount of the transaction"),
+ *     @OA\Property(property="reference", type="string", example="Order #123", description="The reference for the transaction"),
+ *     @OA\Property(property="description", type="string", example="Used credit for purchasing an order", description="Details about the transaction"),
+ *     @OA\Property(property="expiry_date", type="string", format="date", nullable=true, example="2024-12-31", description="The expiry date of the transaction, if applicable"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T12:00:00Z", description="Timestamp when the transaction was created"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-10T15:30:00Z", description="Timestamp when the transaction was last updated")
+ * )
+ * 
+ * 
+ * @OA\Schema(
+ *     schema="ArtistPickupLocation",
+ *     type="object",
+ *     required={"artist_id", "city", "address"},
+ *     @OA\Property(property="id", type="integer", example=1, description="The unique identifier of the pickup location"),
+ *     @OA\Property(property="artist_id", type="integer", example=5, description="The ID of the artist associated with the pickup location"),
+ *     @OA\Property(property="city", type="string", example="Cairo", description="The city where the pickup location is located"),
+ *     @OA\Property(property="zone", type="string", nullable=true, example="Downtown", description="The zone within the city for the pickup location"),
+ *     @OA\Property(property="address", type="string", example="123 Main St, Cairo", description="The full address of the pickup location"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T12:00:00Z", description="Timestamp when the pickup location was created"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-10T15:30:00Z", description="Timestamp when the pickup location was last updated")
  * )
  */
 

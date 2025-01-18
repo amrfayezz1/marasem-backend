@@ -138,7 +138,7 @@ class ArtworkController extends Controller
         $tags = Tag::select('tags.id', 'tags.category_id', 'tags.name', 'tags.created_at', 'tags.updated_at')
             ->leftJoin('artwork_tag', 'tags.id', '=', 'artwork_tag.tag_id')
             ->selectRaw('COUNT(artwork_tag.artwork_id) as usage_count')
-            ->groupBy('tags.id', 'tags.name', 'tags.created_at', 'tags.updated_at')
+            ->groupBy('tags.id', 'tags.category_id', 'tags.name', 'tags.created_at', 'tags.updated_at')
             ->orderByDesc('usage_count')
             ->get();
 
@@ -218,7 +218,7 @@ class ArtworkController extends Controller
         if (count($validated['sizes']) !== count($validated['prices'])) {
             return response()->json(['error' => 'Sizes and prices must have matching counts.'], 400);
         }
-    
+
         // Calculate min and max prices
         $prices = $validated['prices'];
         $minPrice = min($prices);
@@ -261,6 +261,208 @@ class ArtworkController extends Controller
             'message' => 'Artwork created successfully.',
             'artwork' => $artwork,
         ]);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/artworks/{id}",
+     *     summary="Update an existing artwork",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the artwork to update",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="name", type="string", nullable=true, example="Sunset Painting"),
+     *             @OA\Property(property="images", type="array", @OA\Items(type="string", format="binary")),
+     *             @OA\Property(property="art_type", type="string", nullable=true, example="Painting"),
+     *             @OA\Property(property="artwork_status", type="string", nullable=true, example="Available"),
+     *             @OA\Property(property="sizes", type="array", @OA\Items(type="string", example="24x36")),
+     *             @OA\Property(property="prices", type="array", @OA\Items(type="number", format="float", example=200.50)),
+     *             @OA\Property(property="description", type="string", nullable=true, example="A beautiful sunset painting."),
+     *             @OA\Property(property="tags", type="array", @OA\Items(type="integer", example=1)),
+     *             @OA\Property(property="collections", type="array", @OA\Items(type="integer", example=2)),
+     *             @OA\Property(property="customizable", type="boolean", nullable=true, example=true),
+     *             @OA\Property(property="duration", type="string", nullable=true, example="7 days", description="Required if customizable is true")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Artwork updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Artwork updated successfully."),
+     *             @OA\Property(property="artwork", ref="#/components/schemas/Artwork")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized to update this artwork"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors"
+     *     )
+     * )
+     */
+
+    public function updateArtwork(Request $request, $id)
+    {
+        $artwork = Artwork::find($id);
+
+        if (!$artwork) {
+            return response()->json(['error' => 'Artwork not found.'], 404);
+        }
+
+        // Ensure the logged-in user is the owner of the artwork
+        if ($artwork->artist_id !== Auth::id()) {
+            return response()->json(['error' => 'You are not authorized to update this artwork.'], 403);
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'images' => 'nullable|array|min:1',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg',
+            'art_type' => 'nullable|string',
+            'artwork_status' => 'nullable|string',
+            'sizes' => 'nullable|array',
+            'prices' => 'nullable|array',
+            'sizes.*' => 'required_with:prices|string',
+            'prices.*' => 'required_with:sizes|numeric',
+            'description' => 'nullable|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
+            'collections' => 'nullable|array',
+            'collections.*' => 'exists:collections,id',
+            'customizable' => 'nullable|boolean',
+            'duration' => 'nullable|string',
+        ]);
+
+        if (isset($validated['sizes']) && isset($validated['prices'])) {
+            if (count($validated['sizes']) !== count($validated['prices'])) {
+                return response()->json(['error' => 'Sizes and prices must have matching counts.'], 400);
+            }
+        }
+
+        // Update images
+        $uploadedImages = $artwork->images ? json_decode($artwork->images, true) : [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('artworks', 'public');
+                $uploadedImages[] = asset('storage/' . $path);
+            }
+        }
+
+        // Calculate min and max prices
+        $prices = isset($validated['prices']) ? $validated['prices'] : json_decode($artwork->sizes_prices, true);
+        $minPrice = min($prices);
+        $maxPrice = max($prices);
+
+        // Update artwork
+        $artwork->update([
+            'name' => $validated['name'] ?? $artwork->name,
+            'images' => json_encode($uploadedImages),
+            'art_type' => $validated['art_type'] ?? $artwork->art_type,
+            'artwork_status' => $validated['artwork_status'] ?? $artwork->artwork_status,
+            'sizes_prices' => isset($validated['sizes']) && isset($validated['prices'])
+                ? json_encode(array_combine($validated['sizes'], $validated['prices']))
+                : $artwork->sizes_prices,
+            'description' => $validated['description'] ?? $artwork->description,
+            'customizable' => $validated['customizable'] ?? $artwork->customizable,
+            'duration' => $validated['customizable'] ?? $artwork->customizable ? ($validated['duration'] ?? $artwork->duration) : null,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+        ]);
+
+        // Sync tags and collections
+        if (isset($validated['tags'])) {
+            $artwork->tags()->sync($validated['tags']);
+        }
+
+        if (isset($validated['collections'])) {
+            $artwork->collections()->sync($validated['collections']);
+        }
+
+        return response()->json([
+            'message' => 'Artwork updated successfully.',
+            'artwork' => $artwork,
+        ]);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/artworks/{id}",
+     *     summary="Delete an artwork",
+     *     tags={"Artworks"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the artwork to delete",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Artwork deleted successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Artwork deleted successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized to delete this artwork"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork not found"
+     *     )
+     * )
+     */
+
+    public function deleteArtwork($id)
+    {
+        $artwork = Artwork::find($id);
+
+        if (!$artwork) {
+            return response()->json(['error' => 'Artwork not found.'], 404);
+        }
+
+        // Ensure the logged-in user is the owner of the artwork
+        if ($artwork->artist_id !== Auth::id()) {
+            return response()->json(['error' => 'You are not authorized to delete this artwork.'], 403);
+        }
+
+        // Delete associated tags, collections, and other relationships
+        $artwork->tags()->detach();
+        $artwork->collections()->detach();
+
+        // Optionally delete associated images from storage
+        $images = json_decode($artwork->images, true);
+        if ($images) {
+            foreach ($images as $imagePath) {
+                $relativePath = str_replace(asset('storage/'), '', $imagePath);
+                \Storage::disk('public')->delete($relativePath);
+            }
+        }
+
+        // Delete the artwork
+        $artwork->delete();
+
+        return response()->json(['message' => 'Artwork deleted successfully.']);
     }
 
     /**
@@ -313,6 +515,8 @@ class ArtworkController extends Controller
         ]);
         // Increment the likes count
         $artwork->increment('likes_count');
+        $artist = $artwork->artist;
+        $artist->increment('appreciations_count');
 
         return response()->json(['message' => 'Liked successfully', 'likes_count' => $artwork->likes_count], 201);
     }
@@ -365,7 +569,55 @@ class ArtworkController extends Controller
         if ($artwork->likes_count > 0) {
             $artwork->decrement('likes_count');
         }
+        $artist = $artwork->artist;
+        if ($artist->appreciations_count > 0) {
+            $artist->decrement('appreciations_count');
+        }
 
         return response()->json(['message' => 'Unliked successfully', 'likes_count' => $artwork->likes_count], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/artworks/{id}",
+     *     summary="View a specific artwork",
+     *     tags={"Artworks"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the artwork to view",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Artwork details",
+     *         @OA\JsonContent(ref="#/components/schemas/Artwork")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Artwork not found"
+     *     )
+     * )
+     */
+
+    public function viewArtwork(Request $request, $id)
+    {
+        $artwork = Artwork::find($id);
+
+        if (!$artwork) {
+            return response()->json(['message' => 'Artwork not found'], 404);
+        }
+
+        // Increment views for unique visitors
+        $ip = $request->ip();
+        $uniqueKey = "artwork_view_{$id}_{$ip}";
+
+        if (!cache()->has($uniqueKey)) {
+            cache()->put($uniqueKey, true, 86400); // Cache for 1 day
+            $artwork->increment('views_count');
+        }
+
+        return response()->json($artwork);
     }
 }

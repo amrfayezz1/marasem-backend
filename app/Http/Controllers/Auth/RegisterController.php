@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Models\User;
 use App\Models\Address;
 use App\Models\ArtistDetail;
+use App\Models\ArtistPickupLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -360,12 +361,11 @@ class RegisterController extends Controller
         }
 
         // Update pickup location in ArtistDetail
-        $address = Address::create([
-            'user_id' => $user->id,
+        $address = ArtistPickupLocation::create([
+            'artist_id' => $user->id,
             'city' => $request->city,
             'zone' => $request->zone,
             'address' => $request->address,
-            'is_default' => 1,
         ]);
         $artistDetail->completed = true; // Mark as completed
         $artistDetail->registration_step = 4; // Final step
