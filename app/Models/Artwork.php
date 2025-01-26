@@ -24,6 +24,11 @@ class Artwork extends Model
         'max_price',
     ];
 
+    public function translations()
+    {
+        return $this->hasMany(ArtworkTranslation::class);
+    }
+
     public function likes()
     {
         return $this->hasMany(ArtworkLike::class);

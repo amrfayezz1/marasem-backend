@@ -22,6 +22,11 @@ class ArtistDetail extends Model
         'appreciations_count'
     ];
 
+    public function translations()
+    {
+        return $this->hasMany(ArtistDetailTranslation::class);
+    }
+
     /**
      * Get the user that owns the artist details.
      */

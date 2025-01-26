@@ -11,6 +11,10 @@ class Category extends Model
 
     protected $fillable = ['name'];
 
+    public function translations()
+    {
+        return $this->hasMany(CategoryTranslation::class);
+    }
     /**
      * Get the tags associated with the category.
      */

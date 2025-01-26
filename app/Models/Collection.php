@@ -11,6 +11,10 @@ class Collection extends Model
 
     protected $fillable = ['title', 'tags', 'followers'];
 
+    public function translations()
+    {
+        return $this->hasMany(CollectionTranslation::class);
+    }
     /**
      * Many-to-Many relationship: Collection contains many Artworks.
      */

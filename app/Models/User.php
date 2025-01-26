@@ -28,6 +28,8 @@ class User extends Authenticatable
         'profile_picture',
         'preferred_currency',
         'marasem_credit',
+        'is_artist',
+        'is_admin',
     ];
 
     /**

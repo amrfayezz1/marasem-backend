@@ -19,6 +19,10 @@ class CustomizedOrder extends Model
         'status',
     ];
 
+    public function translations()
+    {
+        return $this->hasMany(CustomizedOrderTranslation::class);
+    }
     public function user()
     {
         return $this->belongsTo(User::class);

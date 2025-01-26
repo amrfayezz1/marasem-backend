@@ -26,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('is-artist', function ($user) {
             return $user->is_artist === 1;
         });
+        Gate::define('is-admin', function ($user) {
+            return $user->is_admin === 1;
+        });
     }
 }

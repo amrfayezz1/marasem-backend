@@ -11,6 +11,10 @@ class Tag extends Model
 
     protected $fillable = ['name', 'category_id'];
 
+    public function translations()
+    {
+        return $this->hasMany(TagTranslation::class);
+    }
     /**
      * Many-to-Many relationship: Tags belong to many Artworks.
      */

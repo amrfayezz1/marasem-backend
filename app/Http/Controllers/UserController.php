@@ -80,6 +80,22 @@ class UserController extends Controller
         ]);
     }
 
+    public function updateLocale(Request $request)
+    {
+        $request->validate([
+            'locale' => 'required|string|exists:languages,code',
+        ]);
+
+        $user = auth()->user();
+        $user->preferred_language = $request->locale;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Locale updated successfully.',
+            'locale' => $user->preferred_language
+        ]);
+    }
+
     /**
      * @OA\Get(
      *     path="/artist/profile",
