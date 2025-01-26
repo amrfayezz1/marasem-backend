@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Language;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -39,13 +40,39 @@ class EventController extends Controller
 
     public function getEvents()
     {
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         $events = Event::where(function ($query) {
             $query->whereNull('expires')
                 ->orWhere('expires', '>=', now());
         })
+            ->with([
+                'translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                }
+            ])
             ->orderBy('date_start', 'asc')
             ->get();
 
-        return response()->json($events);
+        $localizedEvents = $events->map(function ($event) {
+            $translation = $event->translations->first();
+            return [
+                'id' => $event->id,
+                'title' => $translation->title ?? $event->title,
+                'description' => $translation->description ?? $event->description,
+                'date_start' => $event->date_start,
+                'date_end' => $event->date_end,
+                'time_start' => $event->time_start,
+                'time_end' => $event->time_end,
+                'location' => $translation->location ?? $event->location,
+                'location_url' => $event->location_url,
+                'cover_img_path' => $event->cover_img_path,
+                'status' => $event->status,
+                'expires' => $event->expires,
+            ];
+        });
+
+        return response()->json($localizedEvents);
     }
 }

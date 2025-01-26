@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collection;
+use App\Models\Language;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 
 class CollectionController extends Controller
@@ -42,24 +44,57 @@ class CollectionController extends Controller
 
     public function index()
     {
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         $collections = Collection::with([
-            'artworks' => function ($query) {
-                $query->latest()->take(3); // Fetch latest 3 artworks for each collection
+            'artworks.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
             }
         ])->get();
 
-        return response()->json($collections->map(function ($collection) {
+        // Fetch tag translations based on the IDs present in collections
+        $allTagIds = $collections->flatMap(function ($collection) {
+            $tags = json_decode($collection->tags, true); // Decode the JSON string
+            return is_array($tags) ? $tags : []; // Ensure it's an array
+        })->unique();
+        $tags = Tag::whereIn('id', $allTagIds)
+            ->with([
+                'translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                }
+            ])
+            ->get()
+            ->keyBy('id');
+
+        return response()->json($collections->map(function ($collection) use ($tags, $preferredLanguageId) {
+            // Collection translation
+            $collectionTranslation = $collection->translations->first();
+            $collection->name = $collectionTranslation->title ?? $collection->title;
+
             return [
                 'id' => $collection->id,
                 'name' => $collection->name,
-                'tags' => $collection->tags,
+                'tags' => collect(json_decode($collection->tags, true))->map(function ($tagId) use ($tags) {
+                    $tag = $tags->get($tagId);
+                    $tagTranslation = $tag ? $tag->translations->first() : null;
+                    return [
+                        'id' => $tagId,
+                        'name' => $tagTranslation->name ?? $tag->name ?? null,
+                    ];
+                })->filter(), // Remove null values
                 'followers' => $collection->followers,
                 'latest_artworks' => $collection->artworks->map(function ($artwork) {
+                    // Artwork translation
+                    $artworkTranslation = $artwork->translations->first();
                     return [
                         'id' => $artwork->id,
-                        'name' => $artwork->name,
+                        'name' => $artworkTranslation->name ?? $artwork->name,
                         'images' => $artwork->images,
-                        'art_type' => $artwork->art_type,
+                        'art_type' => $artworkTranslation->art_type ?? $artwork->art_type,
                     ];
                 }),
             ];
@@ -111,28 +146,76 @@ class CollectionController extends Controller
 
     public function show($id)
     {
-        $collection = Collection::with('artworks.tags')->findOrFail($id);
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
 
-        // Extract all tags from the artworks
-        $tags = $collection->artworks
+        $collection = Collection::with([
+            'artworks.tags.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'artworks.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            }
+        ])->findOrFail($id);
+
+        // Collection translation
+        $collectionTranslation = $collection->translations->first();
+        $collection->name = $collectionTranslation->title ?? $collection->title;
+
+        // Decode the tags JSON and fetch tag details
+        $tagIds = collect(json_decode($collection->tags, true)); // Decode tags JSON
+        $tags = Tag::whereIn('id', $tagIds)
+            ->with([
+                'translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                }
+            ])
+            ->get();
+
+        // Map tags with translations
+        $translatedTags = $tagIds->map(function ($tagId) use ($tags) {
+            $tag = $tags->firstWhere('id', $tagId); // Find the tag by ID
+            if ($tag) {
+                $tagTranslation = $tag->translations->first();
+                return [
+                    'id' => $tag->id,
+                    'name' => $tagTranslation->name ?? $tag->name,
+                ];
+            }
+            return null;
+        })->filter(); // Remove null values
+
+        // Extract all tags from the artworks with translations
+        $artworkTags = $collection->artworks
             ->flatMap(function ($artwork) {
-                return $artwork->tags->pluck('name');
+                return $artwork->tags->map(function ($tag) {
+                    $tagTranslation = $tag->translations->first();
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tagTranslation->name ?? $tag->name,
+                    ];
+                });
             })
-            ->unique()
+            ->unique('id')
             ->values();
 
         return response()->json([
             'id' => $collection->id,
             'name' => $collection->name,
-            'tags' => $collection->tags,
+            'tags' => $translatedTags, // Remove null values
             'followers' => $collection->followers,
-            'artwork_tags' => $tags, // Unique tags from artworks
+            'artwork_tags' => $artworkTags, // Unique tags from artworks
             'artworks' => $collection->artworks->map(function ($artwork) {
+                // Artwork translation
+                $artworkTranslation = $artwork->translations->first();
                 return [
                     'id' => $artwork->id,
-                    'name' => $artwork->name,
+                    'name' => $artworkTranslation->name ?? $artwork->name,
                     'images' => $artwork->images,
-                    'art_type' => $artwork->art_type,
+                    'art_type' => $artworkTranslation->art_type ?? $artwork->art_type,
                     'artist' => $artwork->artist,
                 ];
             }),

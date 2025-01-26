@@ -27,6 +27,7 @@ class User extends Authenticatable
         'country_code',
         'profile_picture',
         'preferred_currency',
+        'preferred_language',
         'marasem_credit',
         'is_artist',
         'is_admin',
@@ -116,5 +117,15 @@ class User extends Authenticatable
     public function follows()
     {
         return $this->belongsToMany(User::class, 'user_follows', 'user_id', 'artist_id');
+    }
+
+    public function translations()
+    {
+        return $this->hasMany(UserTranslation::class);
+    }
+
+    public function pickupLocations()
+    {
+        return $this->hasMany(ArtistPickupLocation::class, 'artist_id');
     }
 }

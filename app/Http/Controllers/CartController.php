@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Artwork;
+use App\Models\Language;
 use App\Models\PromoCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -217,15 +218,41 @@ class CartController extends Controller
             return response()->json(['error' => 'You must be logged in to view your cart.'], 401);
         }
 
-        // Fetch all cart items for the user
-        $cartItems = CartItem::with('artwork')
-            ->where('user_id', $user->id)
-            ->get();
+        // Determine the preferred language for translations
+        $preferredLanguageId = $user->preferred_language ?? null;
+        $languageId = $preferredLanguageId ?: Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
+        // Fetch all cart items for the user with artwork and translations
+        $cartItems = CartItem::with([
+            'artwork.translations' => function ($query) use ($languageId) {
+                $query->where('language_id', $languageId);
+            },
+            'artwork.artist.translations' => function ($query) use ($languageId) {
+                $query->where('language_id', $languageId);
+            }
+        ])->where('user_id', $user->id)->get();
+
+        // Translate artwork and artist fields
+        foreach ($cartItems as $item) {
+            $artwork = $item->artwork;
+
+            // Artwork translations
+            $artworkTranslation = $artwork->translations->first();
+            $artwork->name = $artworkTranslation->name ?? $artwork->name;
+            $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+            $artwork->description = $artworkTranslation->description ?? $artwork->description;
+
+            // Artist translations
+            $artistTranslation = $artwork->artist->translations->first();
+            $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+            $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
+        }
 
         // Calculate the total
         $total = $cartItems->reduce(function ($carry, $item) {
             return $carry + ($item->price * $item->quantity);
         }, 0);
+
         $itemsCount = $cartItems->sum('quantity');
 
         return response()->json([

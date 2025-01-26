@@ -10,6 +10,8 @@ use App\Models\CartItem;
 use App\Models\Invoice;
 use App\Models\CustomizedOrder;
 use App\Models\PromoCode;
+use App\Models\CustomizedOrderTranslation;
+use App\Models\Language;
 use App\Models\CreditTransaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
@@ -363,6 +365,7 @@ class OrderController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // Create the customized order
         $customizedOrder = CustomizedOrder::create([
             'user_id' => $user->id,
             'artwork_id' => $validated['artwork_id'],
@@ -372,6 +375,16 @@ class OrderController extends Controller
             'description' => $validated['description'] ?? null,
             'status' => 'pending', // Default status
         ]);
+
+        // Save the description in the translations table
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+        if ($validated['description']) {
+            CustomizedOrderTranslation::create([
+                'customized_order_id' => $customizedOrder->id,
+                'language_id' => $preferredLanguageId,
+                'description' => $validated['description'],
+            ]);
+        }
 
         return response()->json([
             'message' => 'Customized order submitted successfully.',
@@ -408,12 +421,50 @@ class OrderController extends Controller
             return response()->json(['error' => 'You must be logged in to view customized orders.'], 401);
         }
 
-        $customizedOrders = CustomizedOrder::with('user', 'artwork', 'address')
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
+        $customizedOrders = CustomizedOrder::with([
+            'user.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'artwork.artist.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address'
+        ])
             ->whereHas('artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id); // Ensure the artist owns the artwork
             })
             ->where('status', 'pending') // Only show pending orders
             ->get();
+
+        foreach ($customizedOrders as $order) {
+            // Artwork translations
+            $artworkTranslation = $order->artwork->translations->first();
+            $order->artwork->name = $artworkTranslation->name ?? $order->artwork->name;
+            $order->artwork->art_type = $artworkTranslation->art_type ?? $order->artwork->art_type;
+            $order->artwork->description = $artworkTranslation->description ?? $order->artwork->description;
+
+            // Artist translations
+            $artistTranslation = $order->artwork->artist->translations->first();
+            $order->artwork->artist->first_name = $artistTranslation->first_name ?? $order->artwork->artist->first_name;
+            $order->artwork->artist->last_name = $artistTranslation->last_name ?? $order->artwork->artist->last_name;
+
+            // User translations
+            $userTranslation = $order->user->translations->first();
+            $order->user->first_name = $userTranslation->first_name ?? $order->user->first_name;
+            $order->user->last_name = $userTranslation->last_name ?? $order->user->last_name;
+
+            // Customized Order translations
+            $orderTranslation = $order->translations->first();
+            $order->description = $orderTranslation->description ?? $order->description;
+        }
 
         return response()->json([
             'customized_orders' => $customizedOrders,
@@ -464,14 +515,43 @@ class OrderController extends Controller
             return response()->json(['error' => 'You must be logged in to view your orders.'], 401);
         }
 
+        // Determine the preferred language for translations
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         if ($request->has('order_id')) {
-            $order = Order::with(['items.artwork', 'payments', 'address', 'invoice'])
+            $order = Order::with([
+                'items.artwork.translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                },
+                'items.artwork.artist.translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                },
+                'payments',
+                'address',
+                'invoice'
+            ])
                 ->where('user_id', $user->id)
                 ->where('id', $request->input('order_id'))
                 ->first();
 
             if (!$order) {
                 return response()->json(['error' => 'Order not found.'], 404);
+            }
+
+            // Add translations to the artworks and artist fields
+            foreach ($order->items as $item) {
+                $artwork = $item->artwork;
+
+                // Artwork translations
+                $artworkTranslation = $artwork->translations->first();
+                $artwork->name = $artworkTranslation->name ?? $artwork->name;
+                $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+                $artwork->description = $artworkTranslation->description ?? $artwork->description;
+
+                // Artist translations
+                $artistTranslation = $artwork->artist->translations->first();
+                $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+                $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
             }
 
             return response()->json([
@@ -481,12 +561,38 @@ class OrderController extends Controller
         }
 
         // Fetch all orders for the user
-        $orders = Order::with(['items.artwork', 'payments', 'address', 'invoice'])
+        $orders = Order::with([
+            'items.artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'items.artwork.artist.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'payments',
+            'address',
+            'invoice'
+        ])
             ->where('user_id', $user->id)
             ->get();
 
         // Transform the orders for the response
-        $response = $orders->map(function ($order) {
+        $response = $orders->map(function ($order) use ($preferredLanguageId) {
+            // Add translations to the artworks and artist fields
+            foreach ($order->items as $item) {
+                $artwork = $item->artwork;
+
+                // Artwork translations
+                $artworkTranslation = $artwork->translations->first();
+                $artwork->name = $artworkTranslation->name ?? $artwork->name;
+                $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+                $artwork->description = $artworkTranslation->description ?? $artwork->description;
+
+                // Artist translations
+                $artistTranslation = $artwork->artist->translations->first();
+                $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+                $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
+            }
+
             return [
                 'order' => $order,
                 'items_count' => $order->items->sum('quantity'),
@@ -549,24 +655,51 @@ class OrderController extends Controller
             return response()->json(['error' => 'Only artists can view these orders.'], 403);
         }
 
+        // Determine the preferred language for translations
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         // Fetch all orders that include the artist's artworks
-        $orders = Order::with(['items.artwork', 'address', 'payments', 'invoice'])
+        $orders = Order::with([
+            'items.artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'items.artwork.artist.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address',
+            'payments',
+            'invoice'
+        ])
             ->whereHas('items.artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id); // Only include items where the artist owns the artwork
             })
             ->get();
 
         // Transform the orders for the response
-        $response = $orders->map(function ($order) use ($user) {
+        $response = $orders->map(function ($order) use ($user, $preferredLanguageId) {
             $artistItems = $order->items->filter(function ($item) use ($user) {
                 return $item->artwork->artist_id === $user->id; // Filter items to only the artist's artworks
             });
 
             return [
                 'order_id' => $order->id,
-                'items' => $artistItems->map(function ($item) {
+                'items' => $artistItems->map(function ($item) use ($preferredLanguageId) {
+                    $artwork = $item->artwork;
+
+                    // Artwork translations
+                    $artworkTranslation = $artwork->translations->first();
+                    $artwork->name = $artworkTranslation->name ?? $artwork->name;
+                    $artwork->description = $artworkTranslation->description ?? $artwork->description;
+
+                    // Artist translations
+                    $artistTranslation = $artwork->artist->translations->first();
+                    $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+                    $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
+
                     return [
-                        'artwork_name' => $item->artwork->name,
+                        'artwork_name' => $artwork->name,
+                        'artwork_description' => $artwork->description,
+                        'artist_name' => $artwork->artist->first_name . ' ' . $artwork->artist->last_name,
                         'size' => $item->size,
                         'quantity' => $item->quantity,
                         'price' => $item->price,

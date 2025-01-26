@@ -22,6 +22,7 @@ class Artwork extends Model
         'likes_count',
         'min_price',
         'max_price',
+        'reviewed',
     ];
 
     public function translations()
@@ -55,8 +56,17 @@ class Artwork extends Model
      */
     public function artist()
     {
-        return $this->belongsTo(User::class, 'artist_id');
+        return $this->belongsTo(User::class, 'artist_id')
+            ->with([
+                'translations' => function ($query) {
+                    $locale = auth('sanctum')->user()->preferred_language ?? null;
+                    if ($locale) {
+                        $query->where('language_id', $locale);
+                    }
+                }
+            ]);
     }
+
 
     /**
      * Accessor to convert photos to an array.

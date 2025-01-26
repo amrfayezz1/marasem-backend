@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Collection;
 use App\Models\Tag;
 use App\Models\Artwork;
+use App\Models\Language;
+use App\Models\ArtworkTranslation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
@@ -57,15 +59,28 @@ class ArtworkController extends Controller
      */
     public function fetchArtworks(Request $request)
     {
-        \Log::info($request->all());
+        // Determine the language to use for translations
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : null;
+        $locale = $preferredLanguageId
+            ? Language::find($preferredLanguageId)->code
+            : $request->cookie('locale', 'en');
+        $language = Language::where('code', $locale)->first();
+
+        $languageId = $language ? $language->id : Language::where('code', 'en')->first()->id;
+
         $artworkId = $request->query('artwork_id');
         $offset = $request->query('offset', 0); // Default offset is 0
-        $limit = $request->query('limit', default: 10); // Default limit is 10
-        $user = auth('sanctum')->user();
+        $limit = $request->query('limit', 10); // Default limit is 10
 
         if ($artworkId) {
-            // Fetch a single artwork by ID
-            $artwork = Artwork::with('artist')
+            // Fetch a single artwork by ID with translations
+            $artwork = Artwork::with([
+                'artist',
+                'translations' => function ($query) use ($languageId) {
+                    $query->where('language_id', $languageId);
+                }
+            ])
                 ->withCount(['likes'])
                 ->find($artworkId);
 
@@ -73,7 +88,13 @@ class ArtworkController extends Controller
                 return response()->json(['error' => 'Artwork not found.'], 404);
             }
 
-            // Add liked status for the single artwork
+            // Add translated fields
+            $translation = $artwork->translations->first();
+            $artwork->name = $translation->name ?? $artwork->name;
+            $artwork->art_type = $translation->art_type ?? $artwork->art_type;
+            $artwork->description = $translation->description ?? $artwork->description;
+
+            // Add liked status
             $artwork->liked = $user
                 ? ArtworkLike::where('user_id', $user->id)
                     ->where('artwork_id', $artwork->id)
@@ -85,24 +106,37 @@ class ArtworkController extends Controller
             ]);
         }
 
-        // Fetch artworks with artist and liked status
-        $artworks = Artwork::with('artist')
+        // Fetch multiple artworks with translations
+        $artworks = Artwork::with([
+            'artist',
+            'translations' => function ($query) use ($languageId) {
+                $query->where('language_id', $languageId);
+            }
+        ])
             ->withCount(['likes'])
             ->offset($offset)
             ->limit($limit)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Add liked status for each artwork
-        if ($user) {
-            foreach ($artworks as $artwork) {
-                $artwork->liked = $user
-                    ? ArtworkLike::where('user_id', $user->id)
-                        ->where('artwork_id', $artwork->id)
-                        ->exists()
-                    : false;
-            }
+        // Add translated fields and liked status
+        foreach ($artworks as $artwork) {
+            $translation = $artwork->translations->first();
+            $artwork->name = $translation->name ?? $artwork->name;
+            $artwork->art_type = $translation->art_type ?? $artwork->art_type;
+            $artwork->description = $translation->description ?? $artwork->description;
+
+            $artistTranslation = $artwork->artist->translations->first();
+            $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+            $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
+
+            $artwork->liked = $user
+                ? ArtworkLike::where('user_id', $user->id)
+                    ->where('artwork_id', $artwork->id)
+                    ->exists()
+                : false;
         }
+
         // Check if there are more artworks
         $hasMore = Artwork::count() > ($offset + $limit);
 
@@ -131,16 +165,49 @@ class ArtworkController extends Controller
      */
     public function getCollectionsAndTags()
     {
-        $collections = Collection::withCount([
-            'artworks' // Assuming a relation artworks exists in the Collection model
-        ])->orderByDesc('artworks_count')->get();
+        $user = auth('sanctum')->user();
+        $preferredLanguage = $user ? $user->preferred_language : 'en'; // Use user's preferred language or fallback to 'en'
 
+        $language = Language::where('code', $preferredLanguage)->first();
+
+        // Fetch collections with translations
+        $collections = Collection::with([
+            'translations' => function ($query) use ($language) {
+                if ($language) {
+                    $query->where('language_id', $language->id);
+                }
+            }
+        ])
+            ->withCount(['artworks']) // Assuming a relation artworks exists in the Collection model
+            ->orderByDesc('artworks_count')
+            ->get()
+            ->map(function ($collection) {
+                // Get the translated title or fallback to the original
+                $translation = $collection->translations->first();
+                $collection->title = $translation->title ?? $collection->title;
+                return $collection;
+            });
+
+        // Fetch tags with translations and usage count
         $tags = Tag::select('tags.id', 'tags.category_id', 'tags.name', 'tags.created_at', 'tags.updated_at')
             ->leftJoin('artwork_tag', 'tags.id', '=', 'artwork_tag.tag_id')
             ->selectRaw('COUNT(artwork_tag.artwork_id) as usage_count')
+            ->with([
+                'translations' => function ($query) use ($language) {
+                    if ($language) {
+                        $query->where('language_id', $language->id);
+                    }
+                }
+            ])
             ->groupBy('tags.id', 'tags.category_id', 'tags.name', 'tags.created_at', 'tags.updated_at')
             ->orderByDesc('usage_count')
-            ->get();
+            ->get()
+            ->map(function ($tag) {
+                // Get the translated name or fallback to the original
+                $translation = $tag->translations->first();
+                $tag->name = $translation->name ?? $tag->name;
+                return $tag;
+            });
 
         return response()->json([
             'collections' => $collections,
@@ -193,6 +260,9 @@ class ArtworkController extends Controller
      */
     public function createArtwork(Request $request)
     {
+        $user = auth('sanctum')->user();
+        $locale = $user->preferred_language ?? 1;
+        $language = Language::where('id', $locale)->first();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'images' => 'nullable|array|min:1',
@@ -235,18 +305,29 @@ class ArtworkController extends Controller
 
         // Create artwork
         $artwork = Artwork::create([
-            'artist_id' => Auth::user()->id,
-            'name' => $validated['name'],
+            'artist_id' => $user->id,
+            'name' => $validated['name'], // Save default name
             'images' => json_encode($uploadedImages),
-            'art_type' => $validated['art_type'],
+            'art_type' => $validated['art_type'], // Save default art type
             'artwork_status' => $validated['artwork_status'],
             'sizes_prices' => json_encode(array_combine($validated['sizes'], $validated['prices'])),
-            'description' => $validated['description'],
+            'description' => $validated['description'], // Save default description
             'customizable' => $validated['customizable'],
             'duration' => $validated['customizable'] ? $validated['duration'] : null,
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
         ]);
+
+        // Save translation for the current language
+        if ($language) {
+            ArtworkTranslation::create([
+                'artwork_id' => $artwork->id,
+                'language_id' => $language->id,
+                'name' => $validated['name'],
+                'art_type' => $validated['art_type'],
+                'description' => $validated['description'],
+            ]);
+        }
 
         // Attach tags and collections
         if (!empty($validated['tags'])) {
@@ -330,6 +411,11 @@ class ArtworkController extends Controller
             return response()->json(['error' => 'You are not authorized to update this artwork.'], 403);
         }
 
+        // Get the user's preferred language
+        $user = auth('sanctum')->user();
+        $locale = $user->preferred_language ?? '1';
+        $language = Language::where('id', $locale)->first();
+
         // Validate request
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
@@ -370,7 +456,7 @@ class ArtworkController extends Controller
         $minPrice = min($prices);
         $maxPrice = max($prices);
 
-        // Update artwork
+        // Update artwork in the main table
         $artwork->update([
             'name' => $validated['name'] ?? $artwork->name,
             'images' => json_encode($uploadedImages),
@@ -385,6 +471,18 @@ class ArtworkController extends Controller
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
         ]);
+
+        // Update or create translations in the artwork_translations table
+        if ($language) {
+            ArtworkTranslation::updateOrCreate(
+                ['artwork_id' => $artwork->id, 'language_id' => $language->id],
+                [
+                    'name' => $validated['name'] ?? $artwork->name,
+                    'art_type' => $validated['art_type'] ?? $artwork->art_type,
+                    'description' => $validated['description'] ?? $artwork->description,
+                ]
+            );
+        }
 
         // Sync tags and collections
         if (isset($validated['tags'])) {
@@ -603,7 +701,23 @@ class ArtworkController extends Controller
 
     public function viewArtwork(Request $request, $id)
     {
-        $artwork = Artwork::find($id);
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : null;
+        $locale = $preferredLanguageId
+            ? Language::find($preferredLanguageId)->code
+            : $request->cookie('locale', 'en');
+        $language = Language::where('code', $locale)->first();
+        $languageId = $language ? $language->id : Language::where('code', 'en')->first()->id;
+
+        // Fetch the artwork with translations and artist
+        $artwork = Artwork::with([
+            'translations' => function ($query) use ($languageId) {
+                $query->where('language_id', $languageId);
+            },
+            'artist.translations' => function ($query) use ($languageId) {
+                $query->where('language_id', $languageId);
+            }
+        ])->find($id);
 
         if (!$artwork) {
             return response()->json(['message' => 'Artwork not found'], 404);
@@ -617,6 +731,17 @@ class ArtworkController extends Controller
             cache()->put($uniqueKey, true, 86400); // Cache for 1 day
             $artwork->increment('views_count');
         }
+
+        // Add translated fields
+        $artworkTranslation = $artwork->translations->first();
+        $artwork->name = $artworkTranslation->name ?? $artwork->name;
+        $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+        $artwork->description = $artworkTranslation->description ?? $artwork->description;
+
+        // Add translated artist fields
+        $artistTranslation = $artwork->artist->translations->first();
+        $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+        $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
 
         return response()->json($artwork);
     }

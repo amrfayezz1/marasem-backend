@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\ArtistDetailTranslation;
 use App\Models\User;
 use App\Models\Address;
 use App\Models\ArtistDetail;
+use App\Models\Language;
+use App\Models\UserTranslation;
 use App\Models\ArtistPickupLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -62,6 +65,8 @@ class RegisterController extends Controller
      */
     public function register(Request $request)
     {
+        $locale = $request->cookie('locale', 'en');
+        $language = Language::where('code', $locale)->first();
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -93,7 +98,16 @@ class RegisterController extends Controller
             'phone' => $request->phone,
             'country_code' => $request->country_code,
             'preferred_currency' => $validated['currency'] ?? 'EGP',
+            'preferred_language' => $language->id,
         ]);
+        if ($language) {
+            UserTranslation::create([
+                'user_id' => $user->id,
+                'language_id' => $language->id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+            ]);
+        }
 
         // If the user is an artist, create their artist details record
         if ($request->has('is_artist') && $request->is_artist) {
@@ -156,6 +170,8 @@ class RegisterController extends Controller
      */
     public function addSocialMediaLinks(Request $request)
     {
+        $locale = $request->cookie('locale', 'en');
+        $language = Language::where('code', $locale)->first();
         $validator = Validator::make($request->all(), [
             'social_media_link' => 'required|url',
             'portfolio_link' => 'required|url',
@@ -176,6 +192,13 @@ class RegisterController extends Controller
         }
 
         $validated = $validator->validated();
+        if ($language) {
+            ArtistDetailTranslation::create([
+                'artist_detail_id' => $artistDetail->id,
+                'language_id' => $language->id,
+                'summary' => $validated['summary'],
+            ]);
+        }
         $artistDetail->update([
             'social_media_link' => $validated['social_media_link'],
             'portfolio_link' => $validated['portfolio_link'],
@@ -218,7 +241,36 @@ class RegisterController extends Controller
      */
     public function getCategories()
     {
-        $categories = \App\Models\Tag::all();
+        $user = auth('sanctum')->user();
+        $preferredLanguage = $user ? $user->preferred_language : 'en';
+
+        $language = Language::where('code', $preferredLanguage)->first();
+        // Fetch tags with their respective categories and translations
+        $tags = \App\Models\Tag::with([
+            'category.translations' => function ($query) use ($language) {
+                if ($language) {
+                    $query->where('language_id', $language->id);
+                }
+            }
+        ])->get();
+
+        // Group tags by categories
+        $categories = $tags->groupBy(function ($tag) use ($language) {
+            $category = $tag->category;
+            // Get the translated name of the category, or fallback to the original name
+            $translation = $category->translations->first();
+            $categoryName = $translation->name ?? $category->name;
+            return $categoryName;
+        })->map(function ($tags) {
+            return $tags->map(function ($tag) {
+                $translation = $tag->translations->first();
+                return [
+                    "name" => $translation->name ?? $tag->name,
+                    "id" => $tag->id
+                ];
+            });
+        });
+
         return response()->json([
             'categories' => $categories,
         ]);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Language;
 use App\Models\Artwork;
 use App\Models\Tag;
 use App\Models\CustomizedOrder;
@@ -66,7 +67,18 @@ class ArtistController extends Controller
     {
         $query = User::whereHas('artistDetails', function ($q) {
             $q->where('completed', 1);
-        })->with('artistDetails');
+        })->with([
+                    'artistDetails.translations' => function ($query) {
+                        $user = auth('sanctum')->user();
+                        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+                        $query->where('language_id', $preferredLanguageId);
+                    },
+                    'translations' => function ($query) {
+                        $user = auth('sanctum')->user();
+                        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+                        $query->where('language_id', $preferredLanguageId);
+                    }
+                ]);
 
         // Search by name
         if ($request->has('search')) {
@@ -105,14 +117,24 @@ class ArtistController extends Controller
         $perPage = $request->input('per_page', 12);
         $artists = $perPage == -1 ? $query->get() : $query->paginate($perPage);
 
-        // Add additional details to response
+        // Add additional details and translations to response
         $user = Auth::user();
         $artists->map(function ($artist) use ($user) {
+            // Translate artist names
+            $translation = $artist->translations->first();
+            \Log::info($translation);
+            $artist->first_name = $translation->first_name ?? $artist->first_name;
+            $artist->last_name = $translation->last_name ?? $artist->last_name;
+
+            $detailsTranslation = $artist->artistDetails->translations->first();
+            $artist->artistDetails->summary = $detailsTranslation->summary ?? $artist->artistDetails->summary;
+
             $artist->most_recent_artworks = $artist->artworks()->latest()->take(3)->pluck('photos');
             $artist->is_followed = $user ? $artist->getIsFollowedAttribute() : false;
             $artist->city = $artist->addresses->first()->city ?? null;
             $artist->zone = $artist->addresses->first()->zone ?? null;
             $artist->followers_count = $artist->followers()->count();
+
         });
 
         return response()->json($artists);
@@ -265,9 +287,19 @@ class ArtistController extends Controller
 
     public function getArtistData(Request $request, $id)
     {
+        $user = auth('sanctum')->user();
+        $preferredLanguageId = $user ? $user->preferred_language : Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         // Fetch artist and their related details
         $artist = User::withCount(['followers', 'artworks as artworks_count'])
-            ->with('artistDetails')
+            ->with([
+                'artistDetails.translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                },
+                'translations' => function ($query) use ($preferredLanguageId) {
+                    $query->where('language_id', $preferredLanguageId);
+                }
+            ])
             ->whereHas('artistDetails', function ($q) {
                 $q->where('completed', 1);
             })
@@ -286,11 +318,33 @@ class ArtistController extends Controller
             $artist->artistDetails->increment('profile_views');
         }
 
-        $artworks = Artwork::with('artist')
+        // Translate artist names
+        $translation = $artist->translations->first();
+        $artist->first_name = $translation->first_name ?? $artist->first_name;
+        $artist->last_name = $translation->last_name ?? $artist->last_name;
+
+        // Translate artist details summary
+        $detailsTranslation = $artist->artistDetails->translations->first();
+        $artist->artistDetails->summary = $detailsTranslation->summary ?? $artist->artistDetails->summary;
+
+        // Fetch artist's artworks
+        $artworks = Artwork::with([
+            'artist.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            }
+        ])
             ->withCount('likes')
             ->where('artist_id', $id)
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Translate artworks
+        $artworks->map(function ($artwork) use ($preferredLanguageId) {
+            $artworkTranslation = $artwork->translations->first();
+            $artwork->name = $artworkTranslation->name ?? $artwork->name;
+            $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+            $artwork->description = $artworkTranslation->description ?? $artwork->description;
+        });
 
         $artworkViews = Artwork::where('artist_id', $id)->sum('views_count');
         $appreciations = Artwork::where('artist_id', $id)->sum('likes_count');
@@ -298,7 +352,17 @@ class ArtistController extends Controller
         // Fetch artist's liked artworks
         $likedArtworks = Artwork::whereHas('likes', function ($q) use ($id) {
             $q->where('user_id', $id);
-        })->withCount('likes')->get();
+        })
+            ->withCount('likes')
+            ->get();
+
+        // Translate liked artworks
+        $likedArtworks->map(function ($artwork) use ($preferredLanguageId) {
+            $artworkTranslation = $artwork->translations->first();
+            $artwork->name = $artworkTranslation->name ?? $artwork->name;
+            $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+            $artwork->description = $artworkTranslation->description ?? $artwork->description;
+        });
 
         // Fetch artist's sold-out artworks
         $soldOutArtworks = Artwork::where('artist_id', $id)
@@ -306,7 +370,14 @@ class ArtistController extends Controller
             ->withCount('likes')
             ->get();
 
-        $user = Auth::user();
+        // Translate sold-out artworks
+        $soldOutArtworks->map(function ($artwork) use ($preferredLanguageId) {
+            $artworkTranslation = $artwork->translations->first();
+            $artwork->name = $artworkTranslation->name ?? $artwork->name;
+            $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+            $artwork->description = $artworkTranslation->description ?? $artwork->description;
+        });
+
         $artist->is_followed = $user ? $artist->isFollowedBy($user) : false;
 
         return response()->json([
@@ -689,9 +760,30 @@ class ArtistController extends Controller
             return response()->json(['error' => 'Only artists can access this information.'], 403);
         }
 
-        $categories = Category::with('tags')->get();
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
 
-        // user followed tags
+        // Fetch categories and their tags with translations
+        $categories = Category::with([
+            'tags.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            }
+        ])->get();
+
+        // Translate categories and tags
+        $categories->map(function ($category) {
+            $translation = $category->translations->first();
+            $category->name = $translation->name ?? $category->name;
+
+            $category->tags->map(function ($tag) {
+                $tagTranslation = $tag->translations->first();
+                $tag->name = $tagTranslation->name ?? $tag->name;
+            });
+        });
+
+        // User followed tags
         $userTags = $user->tags()->pluck('tags.id')->toArray();
 
         return response()->json(['categories' => $categories, 'user_tags' => $userTags]);
@@ -801,14 +893,22 @@ class ArtistController extends Controller
             return response()->json(['error' => 'Unauthorized access.'], 403);
         }
 
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         // Fetch standard orders containing the artist's artworks
-        $standardOrders = Order::with(['items.artwork', 'address', 'payments'])
+        $standardOrders = Order::with([
+            'items.artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address',
+            'payments'
+        ])
             ->whereHas('items.artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id);
             })
             ->get();
 
-        $standardOrderSummaries = $standardOrders->map(function ($order) {
+        $standardOrderSummaries = $standardOrders->map(function ($order) use ($preferredLanguageId) {
             return [
                 'order_id' => $order->id,
                 'title' => "Order #{$order->id}",
@@ -816,22 +916,36 @@ class ArtistController extends Controller
                 'artworks_count' => $order->items->count(),
                 'total_price' => $order->total_amount,
                 'status' => $order->order_status,
+                'items' => $order->items->map(function ($item) use ($preferredLanguageId) {
+                    $artworkTranslation = $item->artwork->translations->first();
+                    return [
+                        'artwork_name' => $artworkTranslation->name ?? $item->artwork->name,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                    ];
+                })
             ];
         });
 
         // Fetch customized orders
-        $customizedOrders = CustomizedOrder::with(['artwork', 'address'])
+        $customizedOrders = CustomizedOrder::with([
+            'artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address'
+        ])
             ->whereHas('artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id);
             })
             ->get();
 
-        $customizedOrderSummaries = $customizedOrders->map(function ($customOrder) {
+        $customizedOrderSummaries = $customizedOrders->map(function ($customOrder) use ($preferredLanguageId) {
+            $artworkTranslation = $customOrder->artwork->translations->first();
             return [
                 'order_id' => $customOrder->id,
                 'title' => "Customized Order #{$customOrder->id}",
                 'date' => $customOrder->created_at->format('Y-m-d'),
-                'artwork' => $customOrder->artwork->name ?? 'N/A',
+                'artwork' => $artworkTranslation->name ?? $customOrder->artwork->name ?? 'N/A',
                 'desired_size' => $customOrder->desired_size,
                 'offering_price' => $customOrder->offering_price,
                 'status' => $customOrder->status,
@@ -894,8 +1008,18 @@ class ArtistController extends Controller
             return response()->json(['error' => 'Unauthorized access.'], 403);
         }
 
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         // Fetch the customized order
-        $customOrder = CustomizedOrder::with(['artwork', 'address'])
+        $customOrder = CustomizedOrder::with([
+            'artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address'
+        ])
             ->whereHas('artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id);
             })
@@ -904,6 +1028,14 @@ class ArtistController extends Controller
         if (!$customOrder) {
             return response()->json(['error' => 'Customized order not found.'], 404);
         }
+
+        // Artwork translations
+        $artworkTranslation = $customOrder->artwork->translations->first();
+        $customOrder->artwork->name = $artworkTranslation->name ?? $customOrder->artwork->name;
+
+        // Customized order description translation
+        $descriptionTranslation = $customOrder->translations->first();
+        $customOrder->description = $descriptionTranslation->description ?? $customOrder->description;
 
         $details = [
             'title' => "Customized Order #{$customOrder->id}",
@@ -986,8 +1118,20 @@ class ArtistController extends Controller
             return response()->json(['error' => 'Unauthorized access.'], 403);
         }
 
+        $preferredLanguageId = $user->preferred_language ?? Language::where('code', request()->cookie('locale', 'en'))->first()->id;
+
         // Fetch the order details
-        $order = Order::with(['items.artwork', 'address', 'payments', 'invoice'])
+        $order = Order::with([
+            'items.artwork.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'items.artwork.artist.translations' => function ($query) use ($preferredLanguageId) {
+                $query->where('language_id', $preferredLanguageId);
+            },
+            'address',
+            'payments',
+            'invoice'
+        ])
             ->whereHas('items.artwork', function ($query) use ($user) {
                 $query->where('artist_id', $user->id);
             })
@@ -1003,13 +1147,12 @@ class ArtistController extends Controller
             'marasem_credit_used' => $order->marasem_credit_used,
             'promo_discount' => $order->promo_code_id ? PromoCode::find($order->promo_code_id)->discount_value : 0,
             'promo_type' => $order->promo_code_id ? PromoCode::find($order->promo_code_id)->discount_type : null,
-            // 'shipping_fee' => $order->total_amount - $order->original_total,
             'final_total' => $order->total_amount,
         ];
 
         // Format response
         $details = [
-            'title' => "Customized Order #{$order->id}",
+            'title' => "Order #{$order->id}",
             'order_id' => $order->id,
             'status' => $order->order_status,
             'date' => $order->created_at->format('Y-m-d H:i:s'),
@@ -1017,16 +1160,28 @@ class ArtistController extends Controller
             'payment_method' => $order->payments->first()->method ?? 'Unknown',
             'invoice_link' => $order->invoice->path ?? null,
             'price_breakdown' => $priceBreakdown,
-            'artworks' => $order->items->map(function ($item) {
+            'artworks' => $order->items->map(function ($item) use ($preferredLanguageId) {
+                $artwork = $item->artwork;
+
+                // Artwork translations
+                $artworkTranslation = $artwork->translations->first();
+                $artwork->name = $artworkTranslation->name ?? $artwork->name;
+                $artwork->art_type = $artworkTranslation->art_type ?? $artwork->art_type;
+
+                // Artist translations
+                $artistTranslation = $artwork->artist->translations->first();
+                $artwork->artist->first_name = $artistTranslation->first_name ?? $artwork->artist->first_name;
+                $artwork->artist->last_name = $artistTranslation->last_name ?? $artwork->artist->last_name;
+
                 return [
-                    'image' => $item->artwork->photos[0] ?? null,
-                    'title' => $item->artwork->name,
-                    'type' => $item->artwork->art_type,
+                    'image' => $artwork->photos[0] ?? null,
+                    'title' => $artwork->name,
+                    'type' => $artwork->art_type,
                     'size' => $item->size,
                     'price' => $item->price,
                     'quantity' => $item->quantity,
-                    'status' => $item->artwork->artwork_status,
-                    'artist' => $item->artwork->artist,
+                    'status' => $artwork->artwork_status,
+                    'artist' => $artwork->artist,
                 ];
             }),
         ];

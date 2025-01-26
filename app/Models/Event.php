@@ -22,4 +22,9 @@ class Event extends Model
         'status',
         'expires',
     ];
+
+    public function translations()
+    {
+        return $this->hasMany(EventTranslation::class);
+    }
 }
