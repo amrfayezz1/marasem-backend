@@ -94,6 +94,7 @@ class LoginController extends Controller
             }
             $token = $user->createToken('MarasemApp')->plainTextToken;
 
+            $user->update(['last_active_at' => now()]);
             return response()->json([
                 'message' => 'Login successful.',
                 'user' => $user,
@@ -108,6 +109,7 @@ class LoginController extends Controller
                 $user = Auth::user();
                 $token = $user->createToken('MarasemApp')->plainTextToken;
 
+                $user->update(['last_active_at' => now()]);
                 return response()->json([
                     'message' => 'Login successful.',
                     'user' => $user,

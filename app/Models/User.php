@@ -31,6 +31,7 @@ class User extends Authenticatable
         'marasem_credit',
         'is_artist',
         'is_admin',
+        'last_active_at',
     ];
 
     /**
@@ -127,5 +128,10 @@ class User extends Authenticatable
     public function pickupLocations()
     {
         return $this->hasMany(ArtistPickupLocation::class, 'artist_id');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id', 'id');
     }
 }

@@ -1,0 +1,60 @@
+:root {
+    /* Color Variables */
+    --primary-color: #F1AD56;
+    --comp1-color: #1B617F;
+    --red: #CA453D;
+    --pink: #C57999;
+    --purple: #472F5B;
+    --mint: #A2E1E0;
+    --gradient1: transparent linear-gradient(180deg, #20617E 0%, #C84641 53%, #EFAC5E 100%) 0% 0% no-repeat padding-box;
+    --gradient2: transparent linear-gradient(180deg, #B46388 0%, #1B4F6D 100%) 0% 0% no-repeat padding-box;;
+    --background-color: #0A0A0A;
+    --text-color: #ffffff;
+    --text2-color: #BBC7DB;
+    --text3-color: #E5E5E5;
+    --font-family: "Montserrat", Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family), Roboto, Arial, Helvetica, sans-serif;
+    font-weight: 500;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+}
+
+
+
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: var(--comp2-color);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--comp1-color);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--red);
+}

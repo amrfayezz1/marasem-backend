@@ -1,0 +1,19 @@
+.right form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-floating>textarea.form-control {
+    min-height: 100px;
+    height: 100px;
+}
+
+.form-control[type=file] {
+    margin-bottom: 20px;
+}
+
+.form-control[type=file]~img {
+    object-fit: cover;
+}

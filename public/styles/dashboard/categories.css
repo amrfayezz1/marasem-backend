@@ -1,0 +1,105 @@
+.content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.content .left {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 22px;
+    border-radius: 14px;
+    border: 0.3px solid #B9B9B9;
+    background: #FFF;
+    max-width: 250px;
+}
+
+.left a {
+    padding: 14px 30px;
+    padding-right: 50px;
+    color: black;
+    text-decoration: none;
+}
+
+.left a:hover {
+    color: var(--primary-color);
+}
+
+.left a.active {
+    border-radius: 4px;
+    background: #F2D99E22;
+    color: var(--primary-color);
+}
+
+.content .right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: end;
+}
+
+table a {
+    text-decoration: none;
+}
+
+table th,
+table td {
+    text-align: center;
+}
+
+table.table th {
+    background: var(--primary-color);
+    color: white;
+    font-family: Montserrat;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: normal;
+    text-transform: uppercase;
+}
+
+table.table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+table.table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.pagination-container {
+    padding: 10px 0;
+    font-size: 14px;
+    color: #555;
+    width: 100%;
+}
+
+.pagination-buttons .btn {
+    margin: 0 5px;
+    padding: 5px 10px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    border: none;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.table-responsive {
+    width: 100%;
+}
+@media screen and (max-width: 768px) {
+    .table-responsive {
+        width: auto;
+        max-width: 80vw;
+    }
+}

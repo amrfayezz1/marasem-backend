@@ -1,0 +1,124 @@
+.bookings .title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.data {
+    align-items: end;
+}
+
+.form-group {
+    margin-top: 10px;
+}
+
+.bookings form {
+    margin: 0;
+}
+
+.bookings .nav-tabs {
+    gap: 24px;
+    border: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* padding-bottom: 15px; */
+}
+
+.bookings .nav-item .nav-link {
+    border-radius: 80px;
+    background: #FFF;
+    box-shadow: 0px 0px 8.6px -2px rgba(0, 0, 0, 0.10);
+    display: flex;
+    padding: 12px 24px;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    border: none;
+    color: black;
+    height: 100%;
+    min-width: max-content;
+}
+
+.bookings .nav-item .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.bookings th {
+    /* text-align: center; */
+    background-color: var(--primary-color);
+    color: #FFF;
+}
+
+.select {
+    width: 100px;
+}
+
+.bookings td {
+    border-right: 1px solid #ddd;
+}
+
+aside {
+    flex: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+.main {
+    padding: 0;
+    border-radius: 0;
+    background: #FAFAFA;
+    box-shadow: none;
+}
+
+.booking hr {
+    margin: 1rem 0;
+    color: inherit;
+    border: 0;
+    border-top: var(--bs-border-width) solid;
+    opacity: .25;
+}
+
+.order {
+    padding: 15px;
+    background-color: white;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.select2 {
+    padding: 2px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    color: #495057;
+    width: 100% !important;
+}
+
+.select2-selection.select2-selection--single {
+    height: auto !important;
+    padding: 5px !important;
+}
+
+.select2-selection__rendered {
+    display: flex !important;
+}
+
+.select2-container {
+    z-index: 1056;
+    width: 100%;
+    color: black;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.table td span i {
+    font-size: large;
+    padding: 5px;
+    margin: auto 5px;
+    color: var(--comp1-color);
+    cursor: pointer;
+}

@@ -14,6 +14,7 @@ class SetLocale
         // Check if user is authenticated
         if ($user = auth('sanctum')->user()) {
             $locale = $user->preferred_language;
+            $user->update(['last_active_at' => now()]);
         } else {
             // Check if locale is set in the cookie
             $locale = $request->cookie('locale', 'en');

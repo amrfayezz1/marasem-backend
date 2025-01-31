@@ -18,7 +18,7 @@ class Order extends Model
         'promo_code_id',
         'original_total',
         'marasem_credit_used',
-        'original_total',
+        'remaining_marasem_credit',
     ];
 
     public function items()
