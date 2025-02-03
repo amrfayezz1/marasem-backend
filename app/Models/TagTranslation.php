@@ -15,4 +15,9 @@ class TagTranslation extends Model
     {
         return $this->belongsTo(Tag::class);
     }
+
+    public function language()
+    {
+        return $this->belongsTo(Language::class);
+    }
 }

@@ -53,7 +53,7 @@ class CollectionController extends Controller
     public function show($id)
     {
         $collection = Collection::findOrFail($id);
-        $collection->tag_ids = json_decode($collection->tags, true) ?? [];
+        $collection->tag_ids = json_decode((string) $collection->tags, true) ?? [];
         $collection->tag = array_map(function ($tag_id) {
             return [Tag::find($tag_id)->name];
         }, $collection->tag_ids);

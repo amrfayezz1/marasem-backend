@@ -5,6 +5,11 @@ use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Dashboard\LoginController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\CollectionController;
+use App\Http\Controllers\Dashboard\CategoryController;
+use App\Http\Controllers\Dashboard\TagController;
+use App\Http\Controllers\Dashboard\EventController;
+use App\Http\Controllers\Dashboard\CurrencyController;
+use App\Http\Controllers\Dashboard\OrderController;
 
 
 Route::get('login/{provider}/redirect', [SocialLoginController::class, 'redirectToProvider']);
@@ -13,8 +18,8 @@ Route::get('login/{provider}/callback', [SocialLoginController::class, 'handlePr
 
 
 // Authentication Routes
+Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::prefix('admin')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('admin.signin');
     Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout');
 });
@@ -37,5 +42,60 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         Route::put('/{id}', [CollectionController::class, 'update'])->name('update');
         Route::delete('/{id}', [CollectionController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-delete', [CollectionController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    Route::name('categories.')->prefix('categories')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::get('/{id}', [CategoryController::class, 'show'])->name('show');
+        Route::put('/{id}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [CategoryController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    Route::name('tags.')->prefix('sub-categories')->group(function () {
+        Route::get('/', [TagController::class, 'index'])->name('index');
+        Route::post('/', [TagController::class, 'store'])->name('store');
+        Route::get('/{id}', [TagController::class, 'show'])->name('show');
+        Route::put('/{id}', [TagController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TagController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-delete', [TagController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-publish', [TagController::class, 'bulkPublish'])->name('bulk-publish');
+        Route::post('/bulk-unpublish', [TagController::class, 'bulkUnpublish'])->name('bulk-unpublish');
+    });
+
+    Route::name('events.')->prefix('events')->group(function () {
+        Route::get('/', [EventController::class, 'index'])->name('index');
+        Route::post('/', [EventController::class, 'store'])->name('store');
+        Route::get('/{id}', [EventController::class, 'show'])->name('show');
+        Route::put('/{id}', [EventController::class, 'update'])->name('update');
+        Route::delete('/{id}', [EventController::class, 'destroy'])->name('destroy');
+        // Bulk Actions
+        Route::post('/bulk-delete', [EventController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-publish', [EventController::class, 'bulkPublish'])->name('bulk-publish');
+        Route::post('/bulk-unpublish', [EventController::class, 'bulkUnpublish'])->name('bulk-unpublish');
+    });
+
+    Route::name('currencies.')->prefix('currencies')->group(function () {
+        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+        Route::get('/{id}', [CurrencyController::class, 'show'])->name('show');
+        Route::put('/{id}', [CurrencyController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CurrencyController::class, 'destroy'])->name('destroy');
+
+        // Bulk Actions
+        Route::post('/bulk-delete', [CurrencyController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    Route::name('orders.')->prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{id}', [OrderController::class, 'show'])->name('show');
+        Route::post('/', [OrderController::class, 'store'])->name('store');
+        Route::put('/{id}', [OrderController::class, 'update'])->name('update');
+        Route::delete('/{id}', [OrderController::class, 'destroy'])->name('destroy');
+
+        // Bulk Actions
+        Route::post('/bulk-delete', [OrderController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-update-status', [OrderController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
     });
 });

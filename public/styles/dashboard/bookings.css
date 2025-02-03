@@ -122,3 +122,26 @@ aside {
     color: var(--comp1-color);
     cursor: pointer;
 }
+
+.nav-tabs .nav-link {
+    text-transform: capitalize;
+}
+
+.seperate form .form-select,
+.seperate form input {
+    width: 250px !important;
+    max-width: 90vw;
+    min-width: fit-content !important;
+}
+
+.bulks {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.daterangepicker {
+    color: black !important;
+}

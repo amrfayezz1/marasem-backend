@@ -42,7 +42,7 @@
             <thead>
                 <tr>
                     <th class="select"><input type="checkbox" id="selectAll"> Select</th>
-                    <!-- <th>ID</th> -->
+                    <th>ID</th>
                     <th>Collection Name</th>
                     <th>Tags</th>
                     <th>Actions</th>
@@ -52,7 +52,7 @@
                 @foreach($collections as $collection)
                     <tr>
                         <td><input type="checkbox" name="collection_ids[]" value="{{ $collection->id }}"></td>
-                        <!-- <td>{{ $collection->id }}</td> -->
+                        <td>{{ $collection->id }}</td>
                         <td>{{ $collection->title }}</td>
                         <td>
                             @foreach(json_decode($collection->tags) as $tag_id)
