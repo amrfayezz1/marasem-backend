@@ -17,10 +17,15 @@
     width: fit-content;
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:active {
     color: white;
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+}
+
+.nav-link:focus {
+    color: var(--primary-color);
 }
 
 h3 i {

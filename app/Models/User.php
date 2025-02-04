@@ -134,4 +134,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'user_id', 'id');
     }
+
+    public function adminPrivileges() {
+        return $this->hasOne(AdminPrivilege::class, 'user_id', 'id');
+    }
 }

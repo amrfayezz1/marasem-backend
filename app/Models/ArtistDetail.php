@@ -19,7 +19,8 @@ class ArtistDetail extends Model
         'registration_step',
         'completed',
         'profile_views',
-        'appreciations_count'
+        'appreciations_count',
+        'status'
     ];
 
     public function translations()

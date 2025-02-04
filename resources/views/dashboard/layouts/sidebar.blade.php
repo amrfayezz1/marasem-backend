@@ -42,17 +42,23 @@
             <li id="currencies" class="nav-item">
                 <a class="nav-link" href="/dashboard/currencies">Currencies</a>
             </li>
+            <li id="languages" class="nav-item">
+                <a class="nav-link" href="/dashboard/languages">Languages</a>
+            </li>
             <li id="orders" class="nav-item">
                 <a class="nav-link" href="/dashboard/orders">Orders</a>
             </li>
             <li id="artworks" class="nav-item">
                 <a class="nav-link" href="/dashboard/artworks">Art List</a>
             </li>
-            <li id="seller" class="nav-item">
-                <a class="nav-link" href="/dashboard/seller">Seller list</a>
+            <li id="sellers" class="nav-item">
+                <a class="nav-link" href="/dashboard/sellers">Seller list</a>
             </li>
-            <li id="buyer" class="nav-item">
-                <a class="nav-link" href="/dashboard/buyer">Buyer list</a>
+            <li id="buyers" class="nav-item">
+                <a class="nav-link" href="/dashboard/buyers">Buyer list</a>
+            </li>
+            <li id="admins" class="nav-item">
+                <a class="nav-link" href="/dashboard/admins">Admins</a>
             </li>
         </div>
     </nav>
@@ -103,16 +109,22 @@
                     <a class="nav-link" href="/dashboard/currencies">Currencies</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="/dashboard/languages">Languages</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="/dashboard/orders">Orders</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/dashboard/artworks">Art List</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/seller">Seller list</a>
+                    <a class="nav-link" href="/dashboard/sellers">Seller list</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/buyer">Buyer list</a>
+                    <a class="nav-link" href="/dashboard/buyers">Buyer list</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard/admins">Admins</a>
                 </li>
         </div>
     </div>

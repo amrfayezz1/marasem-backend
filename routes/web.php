@@ -10,6 +10,11 @@ use App\Http\Controllers\Dashboard\TagController;
 use App\Http\Controllers\Dashboard\EventController;
 use App\Http\Controllers\Dashboard\CurrencyController;
 use App\Http\Controllers\Dashboard\OrderController;
+use App\Http\Controllers\Dashboard\LanguageController;
+use App\Http\Controllers\Dashboard\ArtworkController;
+use App\Http\Controllers\Dashboard\SellerController;
+use App\Http\Controllers\Dashboard\BuyerController;
+use App\Http\Controllers\Dashboard\AdminController;
 
 
 Route::get('login/{provider}/redirect', [SocialLoginController::class, 'redirectToProvider']);
@@ -97,5 +102,60 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         // Bulk Actions
         Route::post('/bulk-delete', [OrderController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-update-status', [OrderController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
+    });
+
+    Route::name('languages.')->prefix('languages')->group(function () {
+        Route::get('/', [LanguageController::class, 'index'])->name('index');
+        Route::post('/', [LanguageController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [LanguageController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [LanguageController::class, 'update'])->name('update');
+        Route::delete('/{id}', [LanguageController::class, 'destroy'])->name('destroy');
+
+        Route::get('get/{language_id}', [LanguageController::class, 'getLanguage'])->name('show');
+        Route::post('update/{language_id}', [LanguageController::class, 'updateLanguage'])->name('updateLanguage');
+    });
+
+    Route::name('artworks.')->prefix('artworks')->group(function () {
+        Route::get('/', [ArtworkController::class, 'index'])->name('index');
+        Route::post('/', [ArtworkController::class, 'store'])->name('store');
+        Route::get('/{id}', [ArtworkController::class, 'show'])->name('show');
+        Route::put('/{id}', [ArtworkController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ArtworkController::class, 'destroy'])->name('destroy');
+
+        // Bulk Actions
+        Route::post('/bulk-delete', [ArtworkController::class, 'bulkDelete'])->name('bulk-delete');
+    });
+
+    Route::name('sellers.')->prefix('sellers')->group(function () {
+        Route::get('/', [SellerController::class, 'index'])->name('index');
+        Route::post('/', [SellerController::class, 'store'])->name('store');
+        Route::get('/{id}', [SellerController::class, 'show'])->name('show');
+        Route::put('/{id}', [SellerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SellerController::class, 'destroy'])->name('destroy');
+
+        // Bulk Actions
+        Route::post('/bulk-delete', [SellerController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-update-status', [SellerController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
+    });
+
+    Route::name('buyers.')->prefix('buyers')->group(function () {
+        Route::get('/', [BuyerController::class, 'index'])->name('index');
+        Route::post('/', [BuyerController::class, 'store'])->name('store');
+        Route::get('/{id}', [BuyerController::class, 'show'])->name('show');
+        Route::put('/{id}', [BuyerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BuyerController::class, 'destroy'])->name('destroy');
+
+        // Bulk Actions
+        Route::post('/bulk-delete', [BuyerController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/bulk-update-profile', [BuyerController::class, 'bulkUpdateProfile'])->name('bulk-update-profile');
+    });
+    
+    Route::name('admins.')->prefix('admins')->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::post('/', [AdminController::class, 'store'])->name('store');
+        Route::get('/{id}', [AdminController::class, 'show'])->name('show');
+        Route::put('/{id}', [AdminController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AdminController::class, 'remove'])->name('remove');
+        Route::put('/{id}/update-privileges', [AdminController::class, 'updatePrivileges'])->name('update-privileges');
     });
 });

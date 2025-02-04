@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Tag;
 use App\Models\TagTranslation;
 use App\Models\Category;
+use App\Models\Collection;
 use App\Models\ArtworkTag;
 use Illuminate\Support\Facades\DB;
 
@@ -119,6 +120,15 @@ class TagController extends Controller
 
         if ($hasLinkedArtworks) {
             return redirect()->back()->with('error', 'This subcategory cannot be deleted as it is linked to active artworks.');
+        }
+        // if exists in any collection remove it from collection tags
+        $collections = Collection::all();
+        foreach ($collections as $collection) {
+            $tags = json_decode($collection->tags);
+            if (in_array($tag->id, $tags)) {
+                $tags = array_diff($tags, [$tag->id]);
+                $collection->update(['tags' => json_encode($tags)]);
+            }
         }
 
         $tag->delete();
