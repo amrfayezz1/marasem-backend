@@ -19,13 +19,21 @@ class SellerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('is_artist', true)->with(['artistDetails', 'artistDetails.translations', 'translations']);
+        $userPreferredLanguage = auth()->user()->preferred_language;
+        $query = User::where('is_artist', true)
+            ->with(['artistDetails', 'artistDetails.translations', 'translations']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'LIKE', "%{$search}%")
                     ->orWhere('last_name', 'LIKE', "%{$search}%");
+            })->orWhereHas('translations', function ($q) use ($search, $userPreferredLanguage) {
+                $q->where('language_id', $userPreferredLanguage)
+                    ->where(function ($q2) use ($search) {
+                        $q2->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
+                    });
             });
         }
 
@@ -36,13 +44,61 @@ class SellerController extends Controller
         }
 
         $sellers = $query->paginate(10);
+
+        // For each seller, update their name from their translations.
+        foreach ($sellers as $seller) {
+            // Update seller's first and last name if a translation is found.
+            $sellerTranslation = $seller->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($sellerTranslation) {
+                $seller->first_name = $sellerTranslation->first_name;
+                $seller->last_name = $sellerTranslation->last_name;
+            }
+
+            // If the seller has associated artistDetails, update them as well.
+            if ($seller->artistDetails) {
+                $artistDetailsTranslation = $seller->artistDetails->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($artistDetailsTranslation) {
+                    // For example, if the artistDetails has a title and description fields:
+                    $seller->artistDetails->title = $artistDetailsTranslation->title ?? $seller->artistDetails->title;
+                    $seller->artistDetails->description = $artistDetailsTranslation->description ?? $seller->artistDetails->description;
+                }
+            }
+        }
+
         $languages = Language::all();
         return view('dashboard.sellers.index', compact('sellers', 'languages'));
     }
 
     public function show(Request $request, $id)
     {
+        $userPreferredLanguage = auth()->user()->preferred_language;
         $artist = User::with(['artistDetails', 'artistDetails.translations', 'translations'])->findOrFail($id);
+
+        // Update the artist's first and last name from translations.
+        $sellerTranslation = $artist->translations
+            ->where('language_id', $userPreferredLanguage)
+            ->first();
+        if ($sellerTranslation) {
+            $artist->first_name = $sellerTranslation->first_name;
+            $artist->last_name = $sellerTranslation->last_name;
+        }
+
+        // Update associated artistDetails if available.
+        if ($artist->artistDetails) {
+            $artistDetailsTranslation = $artist->artistDetails->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($artistDetailsTranslation) {
+                $artist->artistDetails->title = $artistDetailsTranslation->title ?? $artist->artistDetails->title;
+                $artist->artistDetails->description = $artistDetailsTranslation->description ?? $artist->artistDetails->description;
+            }
+        }
+        $artist->artistDetails->status = tt($artist->artistDetails->status);
+
         return response()->json([
             "seller" => $artist,
             "translations" => $artist->translations

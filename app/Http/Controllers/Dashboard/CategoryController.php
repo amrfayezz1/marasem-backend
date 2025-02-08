@@ -8,29 +8,105 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Category;
 use App\Models\CategoryTranslation;
+use App\Models\StaticTranslation;
 use App\Models\Artwork;
 
 class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::query();
-        if ($request->has('search') && $request->has('filter')) {
-            $search = $request->search;
-            $filter = $request->filter;
-            if ($filter == 'id') {
-                $query->where('id', $search);
-            } else {
-                $query->where($filter, 'like', '%' . $search . '%');
+        try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
+            $query = Category::query();
+
+            if ($request->has('search') && $request->has('filter')) {
+                $search = $request->input('search');
+                $filter = $request->input('filter');
+
+                if ($filter == 'id') {
+                    $query->where('id', $search);
+                } elseif ($filter == 'name') {
+                    // Search by category name or its translation for the user's preferred language
+                    $query->where(function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('name', 'like', '%' . $search . '%')
+                            ->orWhereHas('translations', function ($q2) use ($search, $userPreferredLanguage) {
+                                $q2->where('language_id', $userPreferredLanguage)
+                                    ->where('name', 'like', '%' . $search . '%');
+                            });
+                    });
+                } elseif ($filter == 'status') {
+                    // Search by the status field and via static translations
+                    $query->where(function ($q) use ($search) {
+                        $q->where('status', 'like', '%' . $search . '%');
+
+                        // Retrieve any static translations where the translation matches the search term (case-insensitive)
+                        $statics = StaticTranslation::whereRaw('LOWER(translation) LIKE ?', ['%' . mb_strtolower($search) . '%'])->get();
+                        foreach ($statics as $static) {
+                            $q->orWhere('status', 'like', '%' . $static->token . '%');
+                        }
+                    });
+                } else {
+                    // For any other filter, perform a generic search on that column.
+                    $query->where($filter, 'like', '%' . $search . '%');
+                }
             }
+
+            // Get rows per page from the request; default to 10
+            $rows = $request->input('rows', 10);
+            // Include count of related artworks
+            $categories = $query->withCount('artworks')->paginate($rows);
+
+            // Translate category values (e.g., name and description) based on the preferred language
+            foreach ($categories as $category) {
+                $mainTranslation = $category->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($mainTranslation) {
+                    $category->name = $mainTranslation->name;
+                    if (isset($mainTranslation->description)) {
+                        $category->description = $mainTranslation->description;
+                    }
+                }
+                if ($category->tags) {
+                    foreach ($category->tags as $tag) {
+                        $tagTranslation = $tag->translations
+                            ->where('language_id', $userPreferredLanguage)
+                            ->first();
+                        if ($tagTranslation) {
+                            $tag->name = $tagTranslation->name;
+                        }
+                    }
+                }
+            }
+
+            $languages = Language::all();
+
+            // Fetch artworks (for selection) and translate their details as well as their associated artist details
+            $artworks = Artwork::with('artist')->get();
+            foreach ($artworks as $artwork) {
+                $artworkTranslation = $artwork->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($artworkTranslation) {
+                    $artwork->name = $artworkTranslation->name;
+                }
+
+                if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+                    $artistTranslation = $artwork->artist->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    if ($artistTranslation) {
+                        $artwork->artist->first_name = $artistTranslation->first_name;
+                        $artwork->artist->last_name = $artistTranslation->last_name;
+                    }
+                }
+            }
+
+            return view('dashboard.categories.index', compact('categories', 'languages', 'artworks'));
+        } catch (\Exception $e) {
+            \Log::error($e);
+            return redirect()->back()->with('error', 'Unable to load categories. Please try again later.');
         }
-        // Get rows per page from the request; default to 10
-        $rows = $request->input('rows', 10);
-        // Include count of related artworks
-        $categories = $query->withCount('artworks')->paginate($rows);
-        $languages = Language::all();
-        $artworks = Artwork::with('artist')->get();  // fetch artworks for selection
-        return view('dashboard.categories.index', compact('categories', 'languages', 'artworks'));
     }
 
     public function store(Request $request)
@@ -95,8 +171,51 @@ class CategoryController extends Controller
 
     public function show($id)
     {
-        $category = Category::with('translations', 'translations.language', 'artworks', 'artworks.artist')->findOrFail($id);
-        return response()->json($category);
+        try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
+            $category = Category::with('translations', 'translations.language', 'artworks', 'artworks.artist')->findOrFail($id);
+
+            // Translate the category's values
+            $mainTranslation = $category->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($mainTranslation) {
+                $category->name = $mainTranslation->name;
+                if (isset($mainTranslation->description)) {
+                    $category->description = $mainTranslation->description;
+                }
+            }
+
+            // Translate each artwork and its associated artist
+            foreach ($category->artworks as $artwork) {
+                $artworkTranslation = $artwork->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($artworkTranslation) {
+                    $artwork->name = $artworkTranslation->name;
+                }
+
+                if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+                    $artistTranslation = $artwork->artist->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    if ($artistTranslation) {
+                        $artwork->artist->first_name = $artistTranslation->first_name;
+                        $artwork->artist->last_name = $artistTranslation->last_name;
+                    }
+                }
+            }
+            foreach ($category->translations as $translation) {
+                $translation->language->name = tt($translation->language->name);
+            }
+
+            return response()->json($category);
+        } catch (\Exception $e) {
+            \Log::error($e);
+            return response()->json([
+                'error' => 'Unable to load category. Please try again later.'
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)

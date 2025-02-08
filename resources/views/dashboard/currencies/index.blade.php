@@ -170,6 +170,7 @@
                 let currency = response.currency;
                 $('#editCurrencyModal input[name="name"]').val(currency.name);
                 $('#editCurrencyModal input[name="symbol"]').val(currency.symbol);
+                $('#editCurrencyModal input[name="rate"]').val(currency.rate);
                 $('#editCurrencyModal form').attr('action', `/dashboard/currencies/${currency.id}`);
                 $('#editCurrencyModal').modal('show');
             },

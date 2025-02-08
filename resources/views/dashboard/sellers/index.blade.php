@@ -73,7 +73,7 @@
                         <td>
                             <span
                                 class="badge {{ $seller->artistDetails->status == 'approved' ? 'bg-success' : ($seller->artistDetails->status == 'pending' ? 'bg-warning' : 'bg-danger') }}">
-                                {{ ucfirst($seller->artistDetails->status) }}
+                                {{ ucfirst(tt($seller->artistDetails->status)) }}
                             </span>
                         </td>
                         <td>
@@ -94,6 +94,7 @@
         @if ($sellers->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$sellers->onFirstPage())
                         <a href="{{ $sellers->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -101,13 +102,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $sellers->lastPage(); $i++)
+
+                    @php
+                        $total = $sellers->lastPage();
+                        $current = $sellers->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $sellers->url($i) }}">
-                            <li class="page-item {{ $i == $sellers->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($sellers->hasMorePages())
                         <a href="{{ $sellers->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">

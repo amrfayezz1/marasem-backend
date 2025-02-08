@@ -66,7 +66,7 @@
                         <td>
                             <span
                                 class="badge {{ $order->order_status == 'pending' ? 'bg-warning' : ($order->order_status == 'completed' ? 'bg-success' : ($order->order_status == 'deleted' ? 'bg-danger' : 'bg-secondary')) }}">
-                                {{ ucfirst($order->order_status) }}
+                                {{ ucfirst(tt($order->order_status)) }}
                             </span>
                         </td>
                         <td>${{ number_format($order->total_amount, 2) }}</td>
@@ -84,10 +84,10 @@
             </tbody>
         </table>
 
-        
         @if ($orders->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$orders->onFirstPage())
                         <a href="{{ $orders->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -95,13 +95,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $orders->lastPage(); $i++)
+
+                    @php
+                        $total = $orders->lastPage();
+                        $current = $orders->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $orders->url($i) }}">
-                            <li class="page-item {{ $i == $orders->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($orders->hasMorePages())
                         <a href="{{ $orders->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -226,7 +239,7 @@
                 console.log(order);
                 let artworksHtml = order.items.map(item => `
                     <div class="d-flex align-items-center border-bottom py-2">
-                        <img src="${item.artwork.photos ? JSON.parse(item.artwork.photos)[0] : ''}" class="rounded" width="50" height="50" style="margin-right: 10px;">
+                        <img src="${window.location.origin}/storage/${item.artwork.photos ? JSON.parse(item.artwork.photos)[0] : ''}" class="rounded" width="50" height="50" style="margin-right: 10px;">
                         <div>
                             <strong>${item.artwork.name}</strong>
                             <p class="text-muted">{{ tt('Size') }}: ${item.size}, {{ tt('Quantity') }}: ${item.quantity}, {{ tt('Price') }}: $${parseFloat(item.price).toFixed(2)}</p>

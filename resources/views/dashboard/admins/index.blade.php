@@ -48,25 +48,25 @@
                         <td>{{ $admin->first_name }} {{ $admin->last_name }}</td>
                         <td>{{ $admin->email }}</td>
                         <td>
-                            <span onclick="editAdmin({{ $admin->id }})"><i class="fa-solid fa-pen-to-square"></i></span>
                             @if ($admin->is_admin == 1)
+                                <span onclick="editAdmin({{ $admin->id }})"><i class="fa-solid fa-pen-to-square"></i></span>
                                 <span onclick="editPrivileges({{ $admin->id }})"><i class="fa-solid fa-cogs"></i></span>
+                                <form action="{{ route('dashboard.admins.remove', $admin->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <span onclick="confirmRemove(event)"><i class="fa-solid fa-trash"></i></span>
+                                </form>
                             @endif
-                            <form action="{{ route('dashboard.admins.remove', $admin->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <span onclick="confirmRemove(event)"><i class="fa-solid fa-trash"></i></span>
-                            </form>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
-        
         @if ($admins->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$admins->onFirstPage())
                         <a href="{{ $admins->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -74,13 +74,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $admins->lastPage(); $i++)
+
+                    @php
+                        $total = $admins->lastPage();
+                        $current = $admins->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $admins->url($i) }}">
-                            <li class="page-item {{ $i == $admins->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($admins->hasMorePages())
                         <a href="{{ $admins->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">

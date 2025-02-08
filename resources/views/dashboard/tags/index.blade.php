@@ -58,7 +58,7 @@
                         <td>{{ $tag->category->name }}</td>
                         <td>
                             <span class="badge {{ $tag->status == 'published' ? 'bg-success' : 'bg-danger' }}">
-                                {{ ucfirst($tag->status) }}
+                                {{ ucfirst(tt($tag->status)) }}
                             </span>
                         </td>
                         <td>
@@ -75,10 +75,10 @@
             </tbody>
         </table>
 
-
         @if ($tags->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$tags->onFirstPage())
                         <a href="{{ $tags->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -86,13 +86,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $tags->lastPage(); $i++)
+
+                    @php
+                        $total = $tags->lastPage();
+                        $current = $tags->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $tags->url($i) }}">
-                            <li class="page-item {{ $i == $tags->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($tags->hasMorePages())
                         <a href="{{ $tags->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -344,10 +357,13 @@
                 let tag = response.tag;
                 $('#editTagModal select[name="category_id"]').val(tag.category_id);
                 $('#editTagModal select[name="status"]').val(tag.status);
+                $('#editTagModal input[name="meta_keyword"]').val(tag.meta_keyword);
+                $('#editTagModal input[name="url"]').val(tag.url);
 
                 // Populate translations
                 tag.translations.forEach(translation => {
                     $(`#editTagModal input[name="translations[${translation.language_id}][name]"]`).val(translation.name);
+                    $(`#editTagModal textarea[name="translations[${translation.language_id}][description]"]`).val(translation.description);
                 });
 
                 $('#editTagModal form').attr('action', `/dashboard/sub-categories/${tagId}`);
@@ -369,7 +385,7 @@
                 let tag = response.tag;
                 let translationsHtml = tag.translations.map(t => ` 
                 <p><strong>${t.language ? t.language.name : ''}:</strong> ${t.name} <br>
-                <em>${t.description}</em></p>
+                <em>${t.description ?? ''}</em></p>
             `).join('');
 
                 // Toggle button for visibility status

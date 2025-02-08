@@ -74,7 +74,7 @@
 <!-- Chart Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Payments by Method Chart (Pie)
+    // Revenue by Payment Method Chart (Pie)
     var paymentsByMethodChart = new Chart(document.getElementById('paymentsByMethodChart'), {
         type: 'pie',
         data: {
@@ -90,17 +90,35 @@
     });
 
     // Revenue Trends by Payment Method Chart (Line)
+    // "trendDates" holds the complete set of dates for the x-axis.
+    var trendDates = @json($trendDates); // e.g. ["2025-02-01", "2025-02-02", ...]
+    // Group the revenue trends data by the translated payment method.
     var revenueTrendsData = @json($revenueTrends->groupBy('method'));
+    
+    // Build a dataset for each payment method:
+    var datasets = Object.keys(revenueTrendsData).map(function(method) {
+        // Create a mapping of date => revenue for this method.
+        var dataMap = {};
+        revenueTrendsData[method].forEach(function(entry) {
+            dataMap[entry.date] = entry.revenue;
+        });
+        // For each date in trendDates, get the revenue or default to 0.
+        var dataPoints = trendDates.map(function(date) {
+            return dataMap[date] || 0;
+        });
+        return {
+            label: method,
+            data: dataPoints,
+            borderColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+            fill: false
+        };
+    });
+
     var revenueTrendsChart = new Chart(document.getElementById('revenueTrendsChart'), {
         type: 'line',
         data: {
-            labels: @json($revenueTrends->pluck('date')->unique()),
-            datasets: Object.keys(revenueTrendsData).map(method => ({
-                label: method,
-                data: revenueTrendsData[method].map(entry => entry.revenue),
-                borderColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
-                fill: false
-            }))
+            labels: trendDates,
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -110,4 +128,5 @@
         }
     });
 </script>
+
 @endsection

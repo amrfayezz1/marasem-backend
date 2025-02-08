@@ -17,18 +17,50 @@ class ArtworkController extends Controller
 {
     public function index(Request $request)
     {
+        $userPreferredLanguage = auth()->user()->preferred_language;
         $query = Artwork::with(['artist', 'collections', 'tags', 'translations']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search, $userPreferredLanguage) {
+                // Search in the artwork's own name (and exact match for id)
                 $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('id', $search) // exact match for ID
+                    ->orWhere('id', $search)
+                    // Search in artwork translations (name)
+                    ->orWhereHas('translations', function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('language_id', $userPreferredLanguage)
+                            ->where('name', 'LIKE', "%{$search}%");
+                    })
+                    // Search in the artist's base name (first or last)
+                    ->orWhereHas('artist', function ($q) use ($search) {
+                        $q->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
+                    })
+                    // Search in the artist's translations (first or last name)
+                    ->orWhereHas('artist.translations', function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('language_id', $userPreferredLanguage)
+                            ->where(function ($q2) use ($search) {
+                                $q2->where('first_name', 'LIKE', "%{$search}%")
+                                    ->orWhere('last_name', 'LIKE', "%{$search}%");
+                            });
+                    })
+                    // Search in collection base title
                     ->orWhereHas('collections', function ($q) use ($search) {
                         $q->where('title', 'LIKE', "%{$search}%");
                     })
+                    // Search in collection translations (title)
+                    ->orWhereHas('collections.translations', function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('language_id', $userPreferredLanguage)
+                            ->where('title', 'LIKE', "%{$search}%");
+                    })
+                    // Search in tag base name
                     ->orWhereHas('tags', function ($q) use ($search) {
                         $q->where('name', 'LIKE', "%{$search}%");
+                    })
+                    // Search in tag translations (name)
+                    ->orWhereHas('tags.translations', function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('language_id', $userPreferredLanguage)
+                            ->where('name', 'LIKE', "%{$search}%");
                     });
             });
         }
@@ -38,18 +70,120 @@ class ArtworkController extends Controller
         }
 
         $artworks = $query->paginate(10);
-        $languages = Language::all();
+
+        // Translate artwork, its artist, collections and tags
+        foreach ($artworks as $artwork) {
+            // Translate artwork title using its translations
+            $artworkTranslation = $artwork->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($artworkTranslation) {
+                $artwork->name = $artworkTranslation->name;
+            }
+
+            // Translate the artwork's artist details (if available)
+            if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+                $artistTranslation = $artwork->artist->translations->where('language_id', $userPreferredLanguage)->first();
+                if ($artistTranslation) {
+                    $artwork->artist->first_name = $artistTranslation->first_name;
+                    $artwork->artist->last_name = $artistTranslation->last_name;
+                }
+            }
+
+            // Translate each collection associated with the artwork
+            foreach ($artwork->collections as $collection) {
+                $collectionTranslation = $collection->translations->where('language_id', $userPreferredLanguage)->first();
+                if ($collectionTranslation) {
+                    $collection->title = $collectionTranslation->title;
+                    $collection->description = $collectionTranslation->description;
+                }
+            }
+
+            // Translate each tag associated with the artwork
+            foreach ($artwork->tags as $tag) {
+                $tagTranslation = $tag->translations->where('language_id', $userPreferredLanguage)->first();
+                if ($tagTranslation) {
+                    $tag->name = $tagTranslation->name;
+                }
+            }
+        }
+
+        // Independently fetch and translate artists, collections, and tags for selection lists
         $artists = User::where('is_artist', '1')->get();
+        foreach ($artists as $artist) {
+            if (method_exists($artist, 'translations')) {
+                $artistTranslation = $artist->translations->where('language_id', $userPreferredLanguage)->first();
+                if ($artistTranslation) {
+                    $artist->first_name = $artistTranslation->first_name;
+                    $artist->last_name = $artistTranslation->last_name;
+                }
+            }
+        }
+
         $collections = Collection::all();
+        foreach ($collections as $collection) {
+            $collectionTranslation = $collection->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($collectionTranslation) {
+                $collection->title = $collectionTranslation->title;
+                $collection->description = $collectionTranslation->description;
+            }
+        }
+
         $tags = Tag::all();
+        foreach ($tags as $tag) {
+            $tagTranslation = $tag->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($tagTranslation) {
+                $tag->name = $tagTranslation->name;
+            }
+        }
+
+        $languages = Language::all();
 
         return view('dashboard.artworks.index', compact('artworks', 'languages', 'artists', 'collections', 'tags'));
     }
 
     public function show($id)
     {
-        $artwork = Artwork::with(['artist', 'collections', 'tags', 'translations'])->findOrFail($id);
-        // $artwork->sizes_prices = json_encode($artwork->sizes_prices);
+        $userPreferredLanguage = auth()->user()->preferred_language;
+        $artwork = Artwork::with(['artist', 'collections', 'tags', 'translations', 'translations.language'])->findOrFail($id);
+
+        // Translate artwork title using its translation for the preferred language
+        $artworkTranslation = $artwork->translations->where('language_id', $userPreferredLanguage)->first();
+        if ($artworkTranslation) {
+            $artwork->name = $artworkTranslation->name;
+            $artwork->art_type = $artworkTranslation->art_type;
+            $artwork->description = $artworkTranslation->description;
+
+        }
+        foreach ($artwork->translations as $translation) {
+            $translation->language->name = tt($translation->language->name);
+        }
+        $artwork->artwork_status = tt($artwork->artwork_status);
+
+        // Translate the artwork's artist details, if available
+        if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+            $artistTranslation = $artwork->artist->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($artistTranslation) {
+                $artwork->artist->first_name = $artistTranslation->first_name;
+                $artwork->artist->last_name = $artistTranslation->last_name;
+            }
+        }
+
+        // Translate each collection associated with the artwork
+        foreach ($artwork->collections as $collection) {
+            $collectionTranslation = $collection->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($collectionTranslation) {
+                $collection->title = $collectionTranslation->title;
+                $collection->description = $collectionTranslation->description;
+            }
+        }
+
+        // Translate each tag associated with the artwork
+        foreach ($artwork->tags as $tag) {
+            $tagTranslation = $tag->translations->where('language_id', $userPreferredLanguage)->first();
+            if ($tagTranslation) {
+                $tag->name = $tagTranslation->name;
+            }
+        }
+
         return response()->json(['artwork' => $artwork]);
     }
 

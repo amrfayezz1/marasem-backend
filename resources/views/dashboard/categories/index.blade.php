@@ -64,7 +64,7 @@
                         <td>{{ $category->id }}</td>
                         <td>{{ $category->name }}</td>
                         <td>
-                            @if($category->tags && $category->tags->isNotEmpty())
+                            @if($category->tags && !empty($category->tags))
                                 @foreach($category->tags as $tag)
                                     <span class="badge bg-info">{{ $tag->name }}</span>
                                 @endforeach
@@ -75,7 +75,7 @@
                         <td>{{ $category->artworks_count }}</td>
                         <td>
                             <span class="badge {{ $category->status == 'active' ? 'bg-warning' : 'bg-danger' }}">
-                                {{ ucfirst($category->status) }}
+                                {{ ucfirst(tt($category->status)) }}
                             </span>
                         </td>
                         <td>
@@ -93,10 +93,10 @@
             </tbody>
         </table>
 
-
         @if ($categories->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$categories->onFirstPage())
                         <a href="{{ $categories->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -104,13 +104,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $categories->lastPage(); $i++)
+
+                    @php
+                        $total = $categories->lastPage();
+                        $current = $categories->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $categories->url($i) }}">
-                            <li class="page-item {{ $i == $categories->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($categories->hasMorePages())
                         <a href="{{ $categories->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -175,7 +188,7 @@
                     <label class="mt-2">{{ tt('Artworks:') }}</label>
                     <select name="artworks[]" class="form-control select2-artwork" multiple>
                         @foreach($artworks as $artwork)
-                            <option value="{{ $artwork->id }} "
+                            <option value="{{ $artwork->id }}"
                                 data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
                                 data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
                                 {{ $artwork->name }}
@@ -267,7 +280,7 @@
                     <label class="mt-2">{{ tt('Artworks:') }}</label>
                     <select name="artworks[]" class="form-control select2-artwork" multiple>
                         @foreach($artworks as $artwork)
-                            <option value="{{ $artwork->id }} "
+                            <option value="{{ $artwork->id }}"
                                 data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
                                 data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
                                 {{ $artwork->name }}

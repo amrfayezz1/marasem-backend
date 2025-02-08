@@ -100,3 +100,27 @@ aside .nav b {
     padding-right: 0;
     color: #202224;
 }
+
+/* Style for the dropdown toggle button */
+.dropdown-btn {
+    padding: 6px 8px 6px 16px;
+    font-size: 20px;
+    color: #818181;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    outline: none;
+}
+
+/* Icon style (using Font Awesome as in the reference) */
+.fa-caret-down {
+    float: right;
+    padding-right: 8px;
+}
+
+/* Dropdown container: hidden by default and pushes content down when shown */
+.dropdown-container {
+    display: none;
+    padding-left: 8px;
+}

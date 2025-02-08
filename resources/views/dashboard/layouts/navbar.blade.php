@@ -15,7 +15,8 @@
                     @endphp
                     @foreach ($allanguages as $allanguage)
                         <option value="{{ $allanguage->code }}" {{ $user_lang == $allanguage->code ? 'selected' : '' }}>
-                            {{ tt($allanguage->name) }}</option>
+                            {{ tt($allanguage->name) }}
+                        </option>
                     @endforeach
                 </select>
             </form>
@@ -72,7 +73,11 @@
                             <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="Profile"
                                 class="rounded-circle" width="30">
                         @endif
-                        {{ Auth::user()->first_name }}
+                        @php
+                            $user = Auth::user();
+                            $lang = $user->translations->where('language_id', $user->preferred_language)->first();
+                        @endphp
+                        {{ $lang ? $lang->first_name : $user->first_name }}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                         <li>

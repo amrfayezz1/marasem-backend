@@ -15,4 +15,9 @@ class ArtworkTranslation extends Model
     {
         return $this->belongsTo(Artwork::class);
     }
+
+    public function language()
+    {
+        return $this->belongsTo(Language::class);
+    }
 }

@@ -17,30 +17,96 @@ class CollectionController extends Controller
     public function index(Request $request)
     {
         try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
             $query = Collection::query();
 
-            // Search functionality based on a given filter
-            if ($request->search && $request->filter) {
-                $search = $request->search;
-                $filter = $request->filter;
-                $query->where($filter, 'like', '%' . $search . '%');
+            if ($request->has('search') && $request->has('filter')) {
+                $search = $request->input('search');
+                $filter = $request->input('filter');
+                if ($filter === 'title') {
+                    // Search the main title field and its translation title for the preferred language.
+                    $query->where(function ($q) use ($search, $userPreferredLanguage) {
+                        $q->where('title', 'like', '%' . $search . '%')
+                            ->orWhereHas('translations', function ($q2) use ($search, $userPreferredLanguage) {
+                                $q2->where('language_id', $userPreferredLanguage)
+                                    ->where('title', 'like', '%' . $search . '%');
+                            });
+                    });
+                } else {
+                    // For any other filter, search the specified column.
+                    $query->where($filter, 'like', '%' . $search . '%');
+                }
             }
 
-            // Pagination setup
             $rowsPerPage = $request->input('rows', 10);
             $collections = $query->paginate($rowsPerPage);
 
-            // Fetch all tags and artworks
-            $tags = Tag::all();
-            $artworks = Artwork::with('artist')->get();
+            foreach ($collections as $collection) {
+                // Translate the collection title and description
+                $mainTranslation = $collection->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
 
-            // Fetch available languages
+                if ($mainTranslation) {
+                    $collection->title = $mainTranslation->title;
+                    $collection->description = $mainTranslation->description;
+                }
+
+                // Decode tags (ensuring we get an array) and translate each tag
+                $tagsArray = is_array($collection->tags)
+                    ? $collection->tags
+                    : json_decode($collection->tags, true);
+
+                $translatedTags = [];
+                foreach ($tagsArray as $tagId) {
+                    $tagModel = Tag::find($tagId);
+                    if ($tagModel) {
+                        $tagTranslation = $tagModel->translations
+                            ->where('language_id', $userPreferredLanguage)
+                            ->first();
+                        $translatedTags[] = $tagTranslation ? $tagTranslation->name : $tagModel->name;
+                    }
+                }
+                $collection->tags = $translatedTags;
+            }
+
+            // Translate all tags for the tag list
+            $tags = Tag::all();
+            foreach ($tags as $tag) {
+                $tagTranslation = $tag->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($tagTranslation) {
+                    $tag->name = $tagTranslation->name;
+                }
+            }
+
+            // Translate artworks and, separately, their associated artist details
+            $artworks = Artwork::with('artist')->get();
+            foreach ($artworks as $artwork) {
+                // Translate artwork title
+                $artworkTranslation = $artwork->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($artworkTranslation) {
+                    $artwork->name = $artworkTranslation->name;
+                }
+
+                // Translate artist details if available.
+                if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+                    $artistTranslation = $artwork->artist->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    if ($artistTranslation) {
+                        $artwork->artist->first_name = $artistTranslation->first_name;
+                        $artwork->artist->last_name = $artistTranslation->last_name;
+                    }
+                }
+            }
+
             $languages = Language::all();
 
-            // Get the user's preferred language, defaulting to English if not set
-            $preferredLanguage = auth()->user()->preferred_language ?? 'en';
-
-            return view('dashboard.collections.index', compact('collections', 'tags', 'artworks', 'languages', 'preferredLanguage'));
+            return view('dashboard.collections.index', compact('collections', 'tags', 'artworks', 'languages'));
         } catch (\Exception $e) {
             Log::error($e);
             return redirect()->back()->with('error', 'Unable to load collections. Please try again later.');
@@ -102,54 +168,70 @@ class CollectionController extends Controller
     public function show($id)
     {
         try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
             $collection = Collection::with('translations', 'translations.language')->findOrFail($id);
 
-            // Assuming we want to get the user's preferred language (can be dynamic, e.g., from the request)
-            $preferredLanguageId = auth()->user()->preferred_language; // Or pass as request parameter
-
-            // Update collection's title and description based on the preferred language
-            $translation = $collection->translations->firstWhere('language_id', $preferredLanguageId);
-
-            if ($translation) {
-                $collection->title = $translation->title;
-                $collection->description = $translation->description;
+            // Translate the collection title and description
+            $mainTranslation = $collection->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($mainTranslation) {
+                $collection->title = $mainTranslation->title;
+                $collection->description = $mainTranslation->description;
             }
 
-            // Decode the tag_ids stored in JSON format and map to tag names
+            // Decode tags and translate each tag
             $collection->tag_ids = json_decode((string) $collection->tags, true) ?? [];
-
-            $collection->tags = array_map(function ($tag_id) {
-                $preferredLanguageId = auth()->user()->preferred_language;
-                $tag = Tag::find($tag_id);
-                $tagTranslation = $tag->translations->firstWhere('language_id', $preferredLanguageId);
-                $tag->name = $tagTranslation->name ?? $tag->name;
-                return $tag->name;
-            }, $collection->tag_ids);
-
-            // Get the artworks with artist details
-            $artworks = $collection->artworks()->with('artist')->get();
-
-            // If you want to also display translated names for artist (if available), you can update artist name similarly
-            foreach ($artworks as $artwork) {
-                $artistTranslation = $artwork->artist->translations->firstWhere('language_id', $preferredLanguageId);
-                $artwork->name = $artwork->translations->firstWhere('language_id', $preferredLanguageId)->name ?? $artwork->name;
-                if ($artistTranslation) {
-                    $artwork->artist->first_name = $artistTranslation->first_name;
-                    $artwork->artist->last_name = $artistTranslation->last_name;
+            $translatedTags = [];
+            foreach ($collection->tag_ids as $tagId) {
+                $tagModel = Tag::find($tagId);
+                if ($tagModel) {
+                    $tagTranslation = $tagModel->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    $translatedTags[] = $tagTranslation ? $tagTranslation->name : $tagModel->name;
                 }
             }
+            $collection->tags = $translatedTags;
 
+            // Retrieve artworks with their translations and associated artist translations
+            $artworks = $collection->artworks()
+                ->with('artist.translations', 'translations')
+                ->get();
+
+            foreach ($artworks as $artwork) {
+                // Translate artwork title (or name, as used in your index function)
+                $artworkTranslation = $artwork->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($artworkTranslation) {
+                    $artwork->name = $artworkTranslation->name;
+                }
+
+                // Translate associated artist details if available
+                if ($artwork->artist && method_exists($artwork->artist, 'translations')) {
+                    $artistTranslation = $artwork->artist->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    if ($artistTranslation) {
+                        $artwork->artist->first_name = $artistTranslation->first_name;
+                        $artwork->artist->last_name = $artistTranslation->last_name;
+                    }
+                }
+            }
             foreach ($collection->translations as $translation) {
                 $translation->language->name = tt($translation->language->name);
             }
 
             return response()->json([
                 'collection' => $collection,
-                'artworks' => $artworks
+                'artworks' => $artworks,
             ]);
         } catch (\Exception $e) {
             Log::error($e);
-            return response()->json(['error' => 'Unable to load collection.'], 500);
+            return response()->json([
+                'error' => 'Unable to load collection. Please try again later.'
+            ], 500);
         }
     }
 

@@ -26,36 +26,13 @@
         </div>
     </form>
 
-    <!-- Total Revenue Breakdown (By Category & Payment Method) -->
-    <div class="row mt-4">
-        <!-- Revenue by Category -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ tt('Revenue by Category') }}</h5>
-                    <canvas id="categoryRevenueChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Revenue by Payment Method -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ tt('Revenue by Payment Method') }}</h5>
-                    <canvas id="paymentMethodChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sales Trends -->
+    <!-- Average Order Value -->
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ tt('Sales Trends') }}</h5>
-                    <canvas id="salesTrendsChart"></canvas>
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ tt('Average Order Value') }}</h5>
+                    <h2>${{ number_format($averageOrderValue, 2) }}</h2>
                 </div>
             </div>
         </div>
@@ -78,13 +55,36 @@
         </div>
     </div>
 
-    <!-- Average Order Value -->
+    <!-- Sales Trends -->
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">{{ tt('Average Order Value') }}</h5>
-                    <h2>${{ number_format($averageOrderValue, 2) }}</h2>
+                <div class="card-body">
+                    <h5 class="card-title">{{ tt('Sales Trends') }}</h5>
+                    <canvas id="salesTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Revenue Breakdown (By Category & Payment Method) -->
+    <div class="row mt-4">
+        <!-- Revenue by Category -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ tt('Revenue by Category') }}</h5>
+                    <canvas id="categoryRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue by Payment Method -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ tt('Revenue by Payment Method') }}</h5>
+                    <canvas id="paymentMethodChart"></canvas>
                 </div>
             </div>
         </div>
@@ -102,14 +102,14 @@
     var categoryRevenueChart = new Chart(document.getElementById('categoryRevenueChart'), {
         type: 'pie',
         data: {
-            labels: @json($revenueByCategory->pluck('category')),
+            labels: @json($labels),
             datasets: [{
-                data: @json($revenueByCategory->pluck('revenue')),
+                data: @json($data),
                 backgroundColor: ['#6C63FF', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
         }
     });
 

@@ -40,7 +40,7 @@
                         <td>{{ $event->date_start }} - {{ $event->date_end }}</td>
                         <td>
                             <span class="badge {{ $event->status == 'upcoming' ? 'bg-success' : 'bg-secondary' }}">
-                                {{ ucfirst($event->status) }}
+                                {{ ucfirst(tt($event->status)) }}
                             </span>
                         </td>
                         <td>
@@ -57,10 +57,10 @@
             </tbody>
         </table>
 
-
         @if ($events->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$events->onFirstPage())
                         <a href="{{ $events->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -68,13 +68,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $events->lastPage(); $i++)
+
+                    @php
+                        $total = $events->lastPage();
+                        $current = $events->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $events->url($i) }}">
-                            <li class="page-item {{ $i == $events->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($events->hasMorePages())
                         <a href="{{ $events->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -275,6 +288,7 @@
 @endsection
 
 @section('scripts')
+<!-- edit -->
 <script>
     function editEvent(eventId) {
         $.ajax({
@@ -311,6 +325,7 @@
         });
     }
 </script>
+<!-- view -->
 <script>
     function previewEvent(eventId) {
         $.ajax({
@@ -326,9 +341,9 @@
                 `).join('');
 
                 $('#previewEventModal .modal-body').html(`
-                    <h5><strong>${event.translations[0].title}</strong></h5>
-                    <p>${event.translations[0].description}</p>
-                    <p><strong>{{ tt('Location:') }}</strong> ${event.translations[0].location}</p>
+                    <h5><strong>${event.title}</strong></h5>
+                    <p>${event.description}</p>
+                    <p><strong>{{ tt('Location:') }}</strong> ${event.location}</p>
                     <p><strong>{{ tt('Date:') }}</strong> ${event.date_start} - ${event.date_end}</p>
                     <p><strong>{{ tt('Time:') }}</strong> ${event.time_start} - ${event.time_end}</p>
                     <p><strong>{{ tt('Status:') }}</strong> ${event.status}</p>
@@ -353,6 +368,7 @@
         }
     }
 </script>
+<!-- bulks -->
 <script>
     function getSelectedEventIds() {
         return Array.from(document.querySelectorAll('input[name="event_ids[]"]:checked'))
@@ -391,7 +407,7 @@
         document.querySelectorAll('input[name="event_ids[]"]').forEach(cb => cb.checked = this.checked);
     });
 </script>
-
+<!-- side bar -->
 <script>
     document.querySelector('#events').classList.add('active');
     document.querySelector('#events .nav-link ').classList.add('active');

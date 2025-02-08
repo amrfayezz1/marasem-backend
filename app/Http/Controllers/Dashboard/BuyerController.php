@@ -17,24 +17,54 @@ class BuyerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::whereNotNull('first_name');
+        // Get the authenticated user's preferred language
+        $userPreferredLanguage = auth()->user()->preferred_language;
 
+        // Start with buyers that have a first_name and load their translations
+        $query = User::whereNotNull('first_name')
+            ->with('translations');
+
+        // When a search term is provided, search in base names as well as translations
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search, $userPreferredLanguage) {
                 $q->where('first_name', 'LIKE', "%{$search}%")
                     ->orWhere('last_name', 'LIKE', "%{$search}%")
-                    ->orWhere('id', '=', "$search");
+                    ->orWhere('id', '=', "$search")
+                    ->orWhereHas('translations', function ($q2) use ($search, $userPreferredLanguage) {
+                        $q2->where('language_id', $userPreferredLanguage)
+                            ->where(function ($q3) use ($search) {
+                                $q3->where('first_name', 'LIKE', "%{$search}%")
+                                    ->orWhere('last_name', 'LIKE', "%{$search}%");
+                            });
+                    });
             });
         }
+
+        // Optional date_range filtering (assumes format "YYYY-MM-DD - YYYY-MM-DD")
         if ($request->has('date_range') && $request->date_range) {
-            // YYYY-MM-DD - YYYY-MM-DD
-            $date_start = explode(' - ', $request->date_range)[0];
-            $date_end = explode(' - ', $request->date_range)[1];
-            $query->whereBetween('created_at', [$date_start, $date_end]);
+            $dates = explode(' - ', $request->date_range);
+            if (count($dates) === 2) {
+                $date_start = $dates[0];
+                $date_end = $dates[1];
+                $query->whereBetween('created_at', [$date_start, $date_end]);
+            }
         }
 
+        // Get paginated buyers
         $buyers = $query->paginate(10);
+
+        // Loop through each buyer to override first and last names using translations
+        foreach ($buyers as $buyer) {
+            $translation = $buyer->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($translation) {
+                $buyer->first_name = $translation->first_name;
+                $buyer->last_name = $translation->last_name;
+            }
+        }
+
         $languages = Language::all();
 
         return view('dashboard.buyers.index', compact('buyers', 'languages'));
@@ -42,7 +72,18 @@ class BuyerController extends Controller
 
     public function show(Request $request, $id)
     {
+        $userPreferredLanguage = auth()->user()->preferred_language;
         $buyer = User::with('translations')->findOrFail($id);
+
+        // Override first and last name with the translation (if available)
+        $translation = $buyer->translations
+            ->where('language_id', $userPreferredLanguage)
+            ->first();
+        if ($translation) {
+            $buyer->first_name = $translation->first_name;
+            $buyer->last_name = $translation->last_name;
+        }
+
         return response()->json(['buyer' => $buyer]);
     }
 

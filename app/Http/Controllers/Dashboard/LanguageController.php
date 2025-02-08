@@ -17,6 +17,11 @@ class LanguageController extends Controller
             $search = $request->search;
             $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('code', 'LIKE', "%{$search}%");
+            $statics = StaticTranslation::where('translation', $search)->get();
+            foreach ($statics as $static) {
+                $tokenLower = mb_strtolower($static->token);
+                $query->orWhereRaw('LOWER(name) LIKE ?', ["%{$tokenLower}%"]);
+            }
         }
 
         $languages = $query->paginate(10);
@@ -79,9 +84,23 @@ class LanguageController extends Controller
             // Format the search term to the required format (e.g., 'welcome_to_marasem')
             $formattedSearchTerm = str_replace(' ', '_', strtolower($searchTerm));
 
-            // Filter tokens that match the formatted search term
-            $allTokens = $allTokens->filter(function ($token) use ($formattedSearchTerm) {
-                return strpos($token, $formattedSearchTerm) !== false; // Match token that contains the formatted search term
+            // Filter tokens that match either the formatted token or the translation text (case-insensitive)
+            $allTokens = $allTokens->filter(function ($token) use ($formattedSearchTerm, $searchTerm, $language_id) {
+                $tokenLower = strtolower($token);
+                // Check if the token itself contains the formatted search term.
+                $tokenMatch = strpos($tokenLower, $formattedSearchTerm) !== false;
+
+                // Get the translation for this token for the given language.
+                $translationRecord = StaticTranslation::where('language_id', $language_id)
+                    ->where('token', $token)
+                    ->first();
+                $translationMatch = false;
+                if ($translationRecord) {
+                    $translationLower = strtolower($translationRecord->translation);
+                    $translationMatch = strpos($translationLower, strtolower($searchTerm)) !== false;
+                }
+
+                return $tokenMatch || $translationMatch;
             });
         }
 
@@ -93,15 +112,15 @@ class LanguageController extends Controller
                 new StaticTranslation(['token' => $token, 'language_id' => $language_id, 'translation' => '']);
         });
 
-        // Pagination logic (manually paginating since it's a collection)
+        // Manual pagination (since we're dealing with a collection)
         $perPage = 10;
-        $page = request()->get('page', 1);
+        $page = $request->get('page', 1);
         $translations = new \Illuminate\Pagination\LengthAwarePaginator(
             $translations->slice(($page - 1) * $perPage, $perPage)->values(),
             $translations->count(),
             $perPage,
             $page,
-            ['path' => request()->url()]
+            ['path' => $request->url()]
         );
 
         return view('dashboard.languages.language', compact('translations', 'language'));

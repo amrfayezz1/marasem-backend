@@ -71,10 +71,10 @@
             </tbody>
         </table>
 
-        
         @if ($buyers->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$buyers->onFirstPage())
                         <a href="{{ $buyers->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -82,13 +82,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $buyers->lastPage(); $i++)
+
+                    @php
+                        $total = $buyers->lastPage();
+                        $current = $buyers->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $buyers->url($i) }}">
-                            <li class="page-item {{ $i == $buyers->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($buyers->hasMorePages())
                         <a href="{{ $buyers->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -109,16 +122,16 @@
             </form>
 
             <!-- <form method="POST" action="{{ route('dashboard.buyers.bulk-update-profile') }}" class="d-inline">
-                                                                            @csrf
-                                                                            <div class="input-group">
-                                                                                <select name="profile_type" class="form-select w-auto">
-                                                                                    <option value="regular">{{ tt('Regular') }}</option>
-                                                                                    <option value="vip">{{ tt('VIP') }}</option>
-                                                                                </select>
-                                                                                <input type="hidden" name="ids" id="bulkUpdateProfileIds">
-                                                                                <button type="submit" class="btn btn-primary">{{ tt('Update Profile Type') }}</button>
-                                                                            </div>
-                                                                        </form> -->
+                                                                                @csrf
+                                                                                <div class="input-group">
+                                                                                    <select name="profile_type" class="form-select w-auto">
+                                                                                        <option value="regular">{{ tt('Regular') }}</option>
+                                                                                        <option value="vip">{{ tt('VIP') }}</option>
+                                                                                    </select>
+                                                                                    <input type="hidden" name="ids" id="bulkUpdateProfileIds">
+                                                                                    <button type="submit" class="btn btn-primary">{{ tt('Update Profile Type') }}</button>
+                                                                                </div>
+                                                                            </form> -->
         </div>
     @endif
 </div>
@@ -181,8 +194,8 @@
                     <h5>{{ tt('Address Details') }}</h5>
 
                     <label class="mt-2">{{ tt('Address Name') }}:</label>
-                    <input type="text" name="address[name]" class="form-control" placeholder="{{ tt('Home, Work, etc.') }}"
-                        required>
+                    <input type="text" name="address[name]" class="form-control"
+                        placeholder="{{ tt('Home, Work, etc.') }}" required>
 
                     <label class="mt-2">{{ tt('City') }}:</label>
                     <input type="text" name="address[city]" class="form-control" required>

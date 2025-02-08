@@ -13,7 +13,21 @@ class EventController extends Controller
 {
     public function index()
     {
+        $userPreferredLanguage = auth()->user()->preferred_language;
         $events = Event::with('translations')->paginate(10);
+
+        foreach ($events as $event) {
+            $translation = $event->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($translation) {
+                $event->title = $translation->title;
+                $event->description = $translation->description;
+                $event->location = $translation->location;
+                // Update additional fields as needed...
+            }
+        }
+
         $languages = Language::all();
         return view('dashboard.events.index', compact('events', 'languages'));
     }
@@ -75,7 +89,23 @@ class EventController extends Controller
 
     public function show($id)
     {
+        $userPreferredLanguage = auth()->user()->preferred_language;
         $event = Event::with('translations', 'translations.language')->findOrFail($id);
+
+        $translation = $event->translations
+            ->where('language_id', $userPreferredLanguage)
+            ->first();
+        if ($translation) {
+            $event->title = $translation->title;
+            $event->description = $translation->description;
+            $event->location = $translation->location;
+            // Update additional fields as needed...
+        }
+
+        foreach ($event->translations as $translation) {
+            $translation->language->name = tt($translation->language->name);
+        }
+
         return response()->json(['event' => $event]);
     }
 

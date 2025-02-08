@@ -78,7 +78,7 @@
     var ordersByStatusChart = new Chart(document.getElementById('ordersByStatusChart'), {
         type: 'pie',
         data: {
-            labels: @json($ordersByStatus->pluck('status')),
+            labels: @json($ordersByStatus->pluck('order_status')),
             datasets: [{
                 data: @json($ordersByStatus->pluck('count')),
                 backgroundColor: ['#6C63FF', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']

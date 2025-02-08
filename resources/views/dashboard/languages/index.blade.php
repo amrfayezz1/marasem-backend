@@ -77,10 +77,10 @@
             </tbody>
         </table>
 
-
         @if ($languages->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$languages->onFirstPage())
                         <a href="{{ $languages->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -88,13 +88,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $languages->lastPage(); $i++)
+
+                    @php
+                        $total = $languages->lastPage();
+                        $current = $languages->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $languages->url($i) }}">
-                            <li class="page-item {{ $i == $languages->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($languages->hasMorePages())
                         <a href="{{ $languages->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">

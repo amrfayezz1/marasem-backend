@@ -614,7 +614,7 @@ class ArtworkController extends Controller
         // Increment the likes count
         $artwork->increment('likes_count');
         $artist = $artwork->artist;
-        $artist->increment('appreciations_count');
+        $artist->artistDetails->increment('appreciations_count');
 
         return response()->json(['message' => 'Liked successfully', 'likes_count' => $artwork->likes_count], 201);
     }
@@ -668,8 +668,8 @@ class ArtworkController extends Controller
             $artwork->decrement('likes_count');
         }
         $artist = $artwork->artist;
-        if ($artist->appreciations_count > 0) {
-            $artist->decrement('appreciations_count');
+        if ($artist->artistDetails->appreciations_count > 0) {
+            $artist->artistDetails->decrement('appreciations_count');
         }
 
         return response()->json(['message' => 'Unliked successfully', 'likes_count' => $artwork->likes_count], 200);

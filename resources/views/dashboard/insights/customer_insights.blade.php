@@ -68,21 +68,6 @@
 <!-- Chart Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Acquisition Source Chart (Pie)
-    // var acquisitionChart = new Chart(document.getElementById('acquisitionChart'), {
-    //     type: 'pie',
-    //     data: {
-    //         labels: json($acquisitionSources->pluck('referral_source')),
-    //         datasets: [{
-    //             data: json($acquisitionSources->pluck('count')),
-    //             backgroundColor: ['#6C63FF', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-    //         }]
-    //     },
-    //     options: {
-    //         responsive: true
-    //     }
-    // });
-
     // Popular Categories Chart (Bar)
     var popularCategoriesChart = new Chart(document.getElementById('popularCategoriesChart'), {
         type: 'bar',
@@ -97,9 +82,12 @@
         options: {
             responsive: true,
             scales: {
-                y: { beginAtZero: true }
+                y: {
+                    beginAtZero: true
+                }
             }
         }
     });
 </script>
+
 @endsection

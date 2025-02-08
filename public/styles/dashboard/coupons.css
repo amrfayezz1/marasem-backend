@@ -37,3 +37,21 @@
     color: inherit;
     text-decoration: none;
 }
+
+.card-body.stat {
+    display: flex;
+    flex-wrap: wrap-reverse;
+    justify-content: space-between;
+    gap: 30px;
+    align-items: center;
+    margin: 0 20px;
+    text-align: start;
+}
+
+.card-body.stat i {
+    font-size: xx-large;
+    padding: 13px;
+    border-radius: 14px;
+    color: var(--primary-color);
+    background-color: #F1AD5655;
+}

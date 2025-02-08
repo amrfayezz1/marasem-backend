@@ -56,6 +56,7 @@
     <link href="{{ asset('styles/root.css') }}" rel="stylesheet">
     <link href="{{ asset('styles/dashboard/app.css') }}" rel="stylesheet">
     @yield('css')
+    <link href="{{ asset('styles/dashboard/sidebar.css') }}" rel="stylesheet">
     <link href="{{ asset('styles/dashboard/bookings.css') }}" rel="stylesheet">
     <link href="{{ asset('styles/dashboard/coupons.css') }}" rel="stylesheet">
     @if (auth()->user()->language->code == 'ar')
@@ -70,6 +71,10 @@
 
             .notify .dropdown-menu {
                 right: -150px;
+            }
+
+            aside .nav-link {
+                padding: 16px 15px 16px 20px;
             }
         </style>
     @endif
@@ -111,7 +116,7 @@
         <div class="main">
             @include('dashboard.layouts.navbar')
 
-            <main class="flex-grow-1 p-4">
+            <main class="flex-grow-1 p-2">
                 @yield('content')
             </main>
         </div>
@@ -248,6 +253,23 @@
             });
         }
 
+    </script>
+    <!-- dropdown -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropdownButtons = document.getElementsByClassName("dropdown-btn");
+            for (var i = 0; i < dropdownButtons.length; i++) {
+                dropdownButtons[i].addEventListener("click", function () {
+                    this.classList.toggle("active");
+                    var dropdownContent = this.nextElementSibling;
+                    if (dropdownContent.style.display === "block") {
+                        dropdownContent.style.display = "none";
+                    } else {
+                        dropdownContent.style.display = "block";
+                    }
+                });
+            }
+        });
     </script>
 </body>
 

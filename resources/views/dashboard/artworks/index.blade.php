@@ -103,10 +103,10 @@
             </tbody>
         </table>
 
-        
         @if ($artworks->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$artworks->onFirstPage())
                         <a href="{{ $artworks->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -114,13 +114,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $artworks->lastPage(); $i++)
+
+                    @php
+                        $total = $artworks->lastPage();
+                        $current = $artworks->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $artworks->url($i) }}">
-                            <li class="page-item {{ $i == $artworks->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($artworks->hasMorePages())
                         <a href="{{ $artworks->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -205,7 +218,9 @@
                     <select name="artist_id" class="form-control select2-artist">
                         @foreach($artists as $artist)
                             <option value="{{ $artist->id }}"
-                                data-ar="{{ $artist->translations->firstWhere('language_id', 2)->first_name ?? '' }} {{ $artist->translations->firstWhere('language_id', 2)->last_name ?? '' }}">
+                                data-ar="{{ $artist->translations->firstWhere('language_id', 2)->first_name ?? '' }} {{ $artist->translations->firstWhere('language_id', 2)->last_name ?? '' }}"
+                                data-email="{{ $artist->email }}" data-id="{{ $artist->id }}"
+                                data-profile="{{ $artist->profile_picture ? asset('storage/' . $artist->profile_picture) : '' }}">
                                 {{ $artist->first_name }} {{ $artist->last_name }}
                             </option>
                         @endforeach
@@ -246,8 +261,11 @@
                     <input type="file" name="photos" class="form-control">
 
                     <label class="mt-2">{{ tt('Artwork Status') }}:</label>
-                    <input name="artwork_status" class="form-control" id="artwork_status"
-                        placeholder="{{ tt('e.g. ready to ship') }}">
+                    <select name="artwork_status" id="artwork_status" class="form-control">
+                        <option value="ready_to_ship">{{ tt('ready to ship') }}</option>
+                        <option value="customized_only">{{ tt('customized only') }}</option>
+                        <option value="both">{{ tt('both') }}</option>
+                    </select>
 
                     <label class="mt-2">{{ tt('Reviewed Status') }}:</label>
                     <select name="reviewed" class="form-control" id="reviewed">
@@ -267,6 +285,22 @@
 
 @section('scripts')
 <script>
+    document.getElementById('bulkDeleteForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const selectedIds = Array.from(document.querySelectorAll('input[name="artwork_ids[]"]:checked'))
+            .map(cb => cb.value);
+        if (selectedIds.length === 0) {
+            e.preventDefault();
+            alert('{{ tt('Select at least one artwork to delete.') }}');
+        } else {
+            document.getElementById('bulkDeleteIds').value = JSON.stringify(selectedIds);
+            console.log(selectedIds);
+            if (confirm('{{ tt('Are you sure you want to delete the selected artworks?') }}')) {
+                this.submit();
+            }
+        }
+    });
+
     function editArtwork(artworkId) {
         $.ajax({
             url: `/dashboard/artworks/${artworkId}`,
@@ -293,8 +327,8 @@
 
                 // Populate Other Fields
                 $('#artworkModal select[name="artist_id"]').val(artwork.artist_id).trigger('change');
-                $('#artworkModal select[name="artwork_reviewed"]').val(artwork.reviewed);
-                $('#artworkModal input[name="artwork_status"]').val(artwork.artwork_status);
+                $('#artworkModal select[name="reviewed"]').val(artwork.reviewed).trigger('change');
+                $('#artworkModal select[name="artwork_status"]').val(artwork.artwork_status).trigger('change');
                 $('#artworkModal input[name="price"]').val(artwork.price);
 
                 // Populate Collections & Subcategories
@@ -307,7 +341,6 @@
                 // Populate Sizes & Prices
                 $('#sizePriceContainer').empty(); // Clear existing inputs
                 let sizesPrices = JSON.parse(artwork.sizes_prices);
-                console.log(sizesPrices);
                 Object.entries(sizesPrices).forEach(([size, price], index) => {
                     $('#sizePriceContainer').append(`
                         <div class="input-group mb-2 size-price-entry">
@@ -353,4 +386,167 @@
             $(element).closest('.size-price-entry').remove();
         };
     });
+
+    document.getElementById('selectAll').addEventListener('change', function () {
+        document.querySelectorAll('input[name="artwork_ids[]"]').forEach(cb => cb.checked = this.checked);
+    });
 </script>
+<!-- preview -->
+<script>
+    function previewArtwork(artworkId) {
+        // Show loading text in the modal body
+        $('#previewArtworkModal .modal-body').html('Loading...');
+
+        $.ajax({
+            url: '/dashboard/artworks/' + artworkId, // Adjust if needed
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                var artwork = response.artwork;
+                var html = '<div>';
+
+                // Header with basic artwork info
+                html += '<h3>' + artwork.name + ' (ID: ' + artwork.id + ')</h3>';
+
+                // Artist details
+                if (artwork.artist) {
+                    html += '<p><strong>Artist:</strong> '
+                        + artwork.artist.first_name + ' '
+                        + artwork.artist.last_name;
+                    if (artwork.artist.email) {
+                        html += ' (' + artwork.artist.email + ')';
+                    }
+                    html += '</p>';
+                }
+
+                // Artwork photos (if any)
+                if (artwork.photos) {
+                    // Try parsing photos if it's stored as a JSON string.
+                    var photos = artwork.photos;
+                    if (typeof photos === 'string') {
+                        try {
+                            photos = JSON.parse(photos);
+                        } catch (e) {
+                            photos = [photos];
+                        }
+                    }
+                    if (Array.isArray(photos)) {
+                        html += '<div><strong>Photos:</strong><br/>';
+                        photos.forEach(function (photo) {
+                            html += '<img src="' + window.location.origin + '/storage/' + photo + '" style="max-width:100px; margin:5px;" />';
+                        });
+                        html += '</div>';
+                    }
+                }
+                // Basic artwork information in a definition list
+                html += '<dl>';
+                html += '<dt>{{ tt('Art Type') }}:</dt><dd>' + artwork.art_type + '</dd>';
+                html += '<dt>{{ tt('Artwork Status') }}:</dt><dd>' + artwork.artwork_status + '</dd>';
+                html += '<dt>{{ tt('Sizes & Prices') }}:</dt>';
+                html += '<dd>';
+                if (artwork.sizes_prices) {
+                    var sizesPrices = JSON.parse(artwork.sizes_prices);
+                    Object.entries(sizesPrices).forEach(([size, price]) => {
+                        html += size + ': ' + price + '<br/>';
+                    });
+                }
+                html += '</dd>';
+                html += '<dt>{{tt('Description')}}:</dt><dd>' + artwork.description + '</dd>';
+                html += '<dt>{{tt('Customizable')}}:</dt><dd>' + (artwork.customizable ? '{{ tt('Yes') }}' : '{{ tt('No') }}') + '</dd>';
+                // html += '<dt>{{tt('Duration')}}:</dt><dd>' + artwork.duration + '</dd>';
+                html += '<dt>{{tt('Likes Count')}}:</dt><dd>' + artwork.likes_count + '</dd>';
+                html += '<dt>{{tt('Min Price')}}:</dt><dd>' + artwork.min_price + '</dd>';
+                html += '<dt>{{tt('Max Price')}}:</dt><dd>' + artwork.max_price + '</dd>';
+                html += '<dt>{{ tt('Reviewed') }}:</dt><dd>' + (artwork.reviewed ? '{{ tt('Yes') }}' : '{{ tt('No') }}') + '</dd>';
+                html += '</dl>';
+
+                // Collections (if any)
+                if (artwork.collections && artwork.collections.length > 0) {
+                    html += '<h4>{{ tt('Collections') }}</h4><ul>';
+                    artwork.collections.forEach(function (collection) {
+                        html += '<li>' + collection.title + ' (ID: ' + collection.id + ')</li>';
+                    });
+                    html += '</ul>';
+                }
+
+                // Tags (if any)
+                if (artwork.tags && artwork.tags.length > 0) {
+                    html += '<h4>{{ tt('Tags') }}</h4><ul>';
+                    artwork.tags.forEach(function (tag) {
+                        html += '<li>' + tag.name + ' (ID: ' + tag.id + ')</li>';
+                    });
+                    html += '</ul>';
+                }
+
+                // Artwork translations in all languages
+                if (artwork.translations && artwork.translations.length > 0) {
+                    html += '<h4>{{ tt('Translations') }}</h4>';
+                    html += '<table class="table table-bordered">';
+                    html += '<thead><tr><th>{{ tt('Language') }}</th><th>{{ tt('Name') }}</th><th>{{ tt('Art Type') }}</th><th>{{ tt('Description') }}</th></tr></thead><tbody>';
+                    artwork.translations.forEach(function (translation) {
+                        html += '<tr>';
+                        html += '<td>' + translation.language.name + '</td>';
+                        html += '<td>' + translation.name + '</td>';
+                        html += '<td>' + translation.art_type + '</td>';
+                        html += '<td>' + translation.description + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+
+                html += '</div>';
+
+                // Insert the HTML into the modal body and show the modal
+                $('#previewArtworkModal .modal-body').html(html);
+                $('#previewArtworkModal').modal('show');
+            },
+            error: function (xhr, status, error) {
+                $('#previewArtworkModal .modal-body').html("{{ tt('Failed to load artwork details.') }}");
+                $('#previewArtworkModal').modal('show');
+            }
+        });
+    }
+</script>
+
+<!-- side bar -->
+<script>
+    document.querySelector('#artworks').classList.add('active');
+    document.querySelector('#artworks .nav-link ').classList.add('active');
+</script>
+<!-- select 2 -->
+<script>
+    $(document).ready(function () {
+        function formatArtist(artist) {
+            if (!artist.id) {
+                return artist.text;
+            }
+
+            // Get data attributes from the option element.
+            var $element = $(artist.element);
+            var profilePic = $element.data('profile');
+            var email = $element.data('email');
+            var id = $element.data('id');
+            var name = artist.text; // The text from the option
+
+            // Build the HTML markup. If a profile picture exists, include an image tag.
+            var html = '<span style="display:flex; align-items: center;">';
+            if (profilePic) {
+                html += '<img src="' + profilePic + '" style="width:30px; height:30px; border-radius:50%; margin-right:8px;" />';
+            }
+            html += '<span>';
+            html += '<strong>' + name + '</strong>';
+            html += '<small>(' + email + ') [ID: ' + id + ']</small>';
+            html += '</span>';
+            html += '</span>';
+
+            return html;
+        }
+
+        $('.select2-artist').select2({
+            templateResult: formatArtist,
+            templateSelection: formatArtist,
+            escapeMarkup: function (m) { return m; } // Allow HTML in the output.
+        });
+    });
+</script>
+@endsection

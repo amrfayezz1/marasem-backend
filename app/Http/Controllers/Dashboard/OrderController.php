@@ -12,15 +12,22 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'address'])->where('order_status', '!=', 'deleted');
+        $query = Order::with(['user', 'user.translations', 'address'])
+            ->where('order_status', '!=', 'deleted');
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where('id', $search)
-                ->orWhereHas('user', function ($q) use ($search) {
-                    $q->where('first_name', 'LIKE', "%{$search}%")
-                        ->orWhere('last_name', 'LIKE', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('user.translations', function ($q) use ($search) {
+                        $q->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%");
+                    });
+            });
         }
 
         if ($request->has('status') && $request->status !== 'all') {
@@ -35,6 +42,16 @@ class OrderController extends Controller
         }
 
         $orders = $query->paginate(10);
+
+        foreach ($orders as $order) {
+            $userPreferredLanguage = auth()->user()->preferred_language;
+            $translation = $order->user->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            \Log::info($translation);
+            $order->user->first_name = $translation ? $translation->first_name : $order->user->first_name;
+            $order->user->last_name = $translation ? $translation->last_name : $order->user->last_name;
+        }
 
         return view('dashboard.orders.index', compact('orders'));
     }

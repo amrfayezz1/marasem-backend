@@ -15,20 +15,60 @@ class TagController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Tag::query()->with(['category', 'translations']);
-        if ($request->has('search') && !empty($request->search)) {
-            $search = '%' . $request->search . '%';
-            $query->whereHas('translations', function ($q) use ($search) {
-                $q->where('name', 'LIKE', $search);
-            });
+        try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
+            $query = Tag::query()->with(['category', 'translations']);
+
+            if ($request->has('search') && !empty($request->search)) {
+                $search = '%' . $request->search . '%';
+                $query->whereHas('translations', function ($q) use ($search) {
+                    $q->where('name', 'LIKE', $search);
+                });
+            }
+
+            if ($request->has('category') && $request->category !== 'all') {
+                $query->where('category_id', $request->category);
+            }
+
+            $tags = $query->paginate(10);
+
+            // Translate each Tag's name based on the user's preferred language
+            foreach ($tags as $tag) {
+                // Translate the tag's name
+                $tagTranslation = $tag->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($tagTranslation) {
+                    $tag->name = $tagTranslation->name;
+                }
+
+                // Translate the category's name if the tag has an associated category with translations
+                if ($tag->category && isset($tag->category->translations)) {
+                    $categoryTranslation = $tag->category->translations
+                        ->where('language_id', $userPreferredLanguage)
+                        ->first();
+                    if ($categoryTranslation) {
+                        $tag->category->name = $categoryTranslation->name;
+                    }
+                }
+            }
+
+            $categories = Category::with('translations')->get();
+            foreach ($categories as $category) {
+                $categoryTranslation = $category->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($categoryTranslation) {
+                    $category->name = $categoryTranslation->name;
+                }
+            }
+            $languages = DB::table('languages')->get();
+
+            return view('dashboard.tags.index', compact('tags', 'categories', 'languages'));
+        } catch (\Exception $e) {
+            \Log::error($e);
+            return redirect()->back()->with('error', 'Unable to load tags. Please try again later.');
         }
-        if ($request->has('category') && $request->category !== 'all') {
-            $query->where('category_id', $request->category);
-        }
-        $tags = $query->paginate(10);
-        $categories = Category::all();
-        $languages = DB::table('languages')->get();
-        return view('dashboard.tags.index', compact('tags', 'categories', 'languages'));
     }
 
     public function toggleStatus($id)
@@ -41,8 +81,37 @@ class TagController extends Controller
 
     public function show($id)
     {
-        $tag = Tag::with(['translations', 'category', 'translations.language'])->findOrFail($id);
-        return response()->json(['tag' => $tag]);
+        try {
+            $userPreferredLanguage = auth()->user()->preferred_language;
+            $tag = Tag::with(['translations', 'category', 'translations.language'])->findOrFail($id);
+
+            // Translate the tag's name
+            $tagTranslation = $tag->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($tagTranslation) {
+                $tag->name = $tagTranslation->name;
+                $tag->description = $tagTranslation->description;
+            }
+
+            // Optionally, translate the associated category's name if available
+            if ($tag->category && isset($tag->category->translations)) {
+                $categoryTranslation = $tag->category->translations
+                    ->where('language_id', $userPreferredLanguage)
+                    ->first();
+                if ($categoryTranslation) {
+                    $tag->category->name = $categoryTranslation->name;
+                }
+            }
+            foreach ($tag->translations as $translation) {
+                $translation->language->name = tt($translation->language->name);
+            }
+
+            return response()->json(['tag' => $tag]);
+        } catch (\Exception $e) {
+            \Log::error($e);
+            return response()->json(['error' => 'Unable to load tag. Please try again later.'], 500);
+        }
     }
 
     public function store(Request $request)

@@ -1,4 +1,3 @@
-<link href="{{ asset('styles/dashboard/sidebar.css') }}" rel="stylesheet">
 @php
     $adminPrivileges = json_decode(auth()->user()->adminPrivileges->privileges) ?? [];
 @endphp

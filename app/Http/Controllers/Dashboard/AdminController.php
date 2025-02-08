@@ -18,24 +18,27 @@ class AdminController extends Controller
     private function getAvailablePrivileges()
     {
         return [
-            'dashboard' => 'Dashboard & Insights',
-            'collections' => 'Collections',
-            'categories' => 'Categories',
-            'subcategories' => 'Subcategories',
-            'events' => 'Events',
-            'currencies' => 'Currencies',
-            'languages' => 'Languages',
-            'orders' => 'Orders',
-            'artworks' => 'Art List',
-            'sellers' => 'Seller List',
-            'buyers' => 'Buyer List',
-            'admins' => 'Admins',
+            'dashboard' => tt('Dashboard & Insights'),
+            'collections' => tt('Collections'),
+            'categories' => tt('Categories'),
+            'subcategories' => tt('Subcategories'),
+            'events' => tt('Events'),
+            'currencies' => tt('Currencies'),
+            'languages' => tt('Languages'),
+            'orders' => tt('Orders'),
+            'artworks' => tt('Art List'),
+            'sellers' => tt('Seller List'),
+            'buyers' => tt('Buyer List'),
+            'admins' => tt('Admins'),
         ];
     }
 
     public function index(Request $request)
     {
-        $query = User::where('is_admin', '>', 0)->where('id', '!=', auth()->user()->id)->with(['adminPrivileges', 'translations']);
+        $userPreferredLanguage = auth()->user()->preferred_language;
+        $query = User::where('is_admin', '>', 0)
+            ->where('id', '!=', auth()->user()->id)
+            ->with(['adminPrivileges', 'translations']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -51,11 +54,48 @@ class AdminController extends Controller
         }
 
         $admins = $query->paginate(10);
+
+        // Override the admin names with their translations, if available.
+        foreach ($admins as $admin) {
+            $translation = $admin->translations
+                ->where('language_id', $userPreferredLanguage)
+                ->first();
+            if ($translation) {
+                $admin->first_name = $translation->first_name;
+                $admin->last_name = $translation->last_name;
+            }
+        }
+
         $users = User::where('is_admin', 0)->get();
         $privileges = $this->getAvailablePrivileges();
         $languages = Language::all();
 
         return view('dashboard.admins.index', compact('admins', 'users', 'privileges', 'languages'));
+    }
+
+    public function show($id)
+    {
+        $userPreferredLanguage = auth()->user()->preferred_language;
+        $admin = User::with('adminPrivileges', 'translations')->findOrFail($id);
+
+        // Ensure adminPrivileges exist; if not, create a default record.
+        if ($admin->adminPrivileges == NULL) {
+            AdminPrivilege::create([
+                'user_id' => $admin->id,
+                'privileges' => json_encode([]),
+            ]);
+        }
+
+        // Override the admin's first and last names with translated values if available.
+        $translation = $admin->translations
+            ->where('language_id', $userPreferredLanguage)
+            ->first();
+        if ($translation) {
+            $admin->first_name = $translation->first_name;
+            $admin->last_name = $translation->last_name;
+        }
+
+        return response()->json($admin);
     }
 
     public function store(Request $request)
@@ -126,18 +166,6 @@ class AdminController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Admin added successfully.');
-    }
-
-    public function show($id)
-    {
-        $admin = User::with('adminPrivileges', 'translations')->findOrFail($id);
-        if ($admin->adminPrivileges == NULL) {
-            AdminPrivilege::create([
-                'user_id' => $admin->id,
-                'privileges' => json_encode([]),
-            ]);
-        }
-        return response()->json($admin);
     }
 
     public function update(Request $request, $id)

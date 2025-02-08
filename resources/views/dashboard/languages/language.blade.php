@@ -61,6 +61,7 @@
             @if ($translations->hasPages())
                 <nav aria-label="Page navigation example">
                     <ul class="pagination">
+                        {{-- Previous Page Link --}}
                         @if (!$translations->onFirstPage())
                             <a href="{{ $translations->previousPageUrl() }}" aria-label="Previous">
                                 <li class="page-item arr">
@@ -68,13 +69,26 @@
                                 </li>
                             </a>
                         @endif
-                        @for ($i = 1; $i <= $translations->lastPage(); $i++)
+
+                        @php
+                            $total = $translations->lastPage();
+                            $current = $translations->currentPage();
+                            // Calculate start and end page numbers to display
+                            $start = max($current - 2, 1);
+                            $end = min($start + 4, $total);
+                            // Adjust start if we are near the end to ensure we show 5 pages if possible
+                            $start = max($end - 4, 1);
+                        @endphp
+
+                        @for ($i = $start; $i <= $end; $i++)
                             <a href="{{ $translations->url($i) }}">
-                                <li class="page-item {{ $i == $translations->currentPage() ? 'active' : '' }}">
+                                <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                     {{ $i }}
                                 </li>
                             </a>
                         @endfor
+
+                        {{-- Next Page Link --}}
                         @if ($translations->hasMorePages())
                             <a href="{{ $translations->nextPageUrl() }}" aria-label="Next">
                                 <li class="page-item arr">

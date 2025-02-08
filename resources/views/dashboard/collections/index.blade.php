@@ -56,39 +56,29 @@
             </thead>
             <tbody>
                 @foreach($collections as $collection)
-                        <tr>
-                            <td><input type="checkbox" name="collection_ids[]" value="{{ $collection->id }}"></td>
-                            <td>{{ $collection->id }}</td>
-                            <td>
-                                @php
-                                    // Get the translation for the collection title based on the preferred language
-                                    $translation = $collection->translations->firstWhere('language_id', $preferredLanguage);
-                                @endphp
-                                {{ $translation ? $translation->title : $collection->title }}
-                            </td>
-                            <td>
-                                @foreach(json_decode($collection->tags) as $tag_id)
-                                            @php
-                                                $tag = \App\Models\Tag::find($tag_id);
-                                                $tagTranslation = $tag ? $tag->translations->firstWhere('language_id', $preferredLanguage) : null;
-                                            @endphp
-                                            <span class="badge bg-danger">
-                                                {{ $tagTranslation ? $tagTranslation->name : $tag->name }}
-                                            </span>
-                                @endforeach
-                            </td>
-                            <td>
-                                <span onclick="previewCollection({{ $collection->id }})"><i class="fa-solid fa-eye"></i></span>
-                                <span onclick="editCollection({{ $collection->id }})"><i
-                                        class="fa-solid fa-pen-to-square"></i></span>
-                                <form action="{{ route('dashboard.collections.destroy', $collection->id) }}" method="POST"
-                                    class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <span onclick="confirmDelete(event)"><i class="fa-solid fa-trash"></i></span>
-                                </form>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td><input type="checkbox" name="collection_ids[]" value="{{ $collection->id }}"></td>
+                        <td>{{ $collection->id }}</td>
+                        <td>{{ $collection->title }}</td>
+                        <td>
+                            @foreach($collection->tags as $tag)
+                                <span class="badge bg-danger">
+                                    {{ $tag }}
+                                </span>
+                            @endforeach
+                        </td>
+                        <td>
+                            <span onclick="previewCollection({{ $collection->id }})"><i class="fa-solid fa-eye"></i></span>
+                            <span onclick="editCollection({{ $collection->id }})"><i
+                                    class="fa-solid fa-pen-to-square"></i></span>
+                            <form action="{{ route('dashboard.collections.destroy', $collection->id) }}" method="POST"
+                                class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <span onclick="confirmDelete(event)"><i class="fa-solid fa-trash"></i></span>
+                            </form>
+                        </td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -96,6 +86,7 @@
         @if ($collections->hasPages())
             <nav aria-label="Page navigation example">
                 <ul class="pagination">
+                    {{-- Previous Page Link --}}
                     @if (!$collections->onFirstPage())
                         <a href="{{ $collections->previousPageUrl() }}" aria-label="Previous">
                             <li class="page-item arr">
@@ -103,13 +94,26 @@
                             </li>
                         </a>
                     @endif
-                    @for ($i = 1; $i <= $collections->lastPage(); $i++)
+
+                    @php
+                        $total = $collections->lastPage();
+                        $current = $collections->currentPage();
+                        // Calculate start and end page numbers to display
+                        $start = max($current - 2, 1);
+                        $end = min($start + 4, $total);
+                        // Adjust start if we are near the end to ensure we show 5 pages if possible
+                        $start = max($end - 4, 1);
+                    @endphp
+
+                    @for ($i = $start; $i <= $end; $i++)
                         <a href="{{ $collections->url($i) }}">
-                            <li class="page-item {{ $i == $collections->currentPage() ? 'active' : '' }}">
+                            <li class="page-item {{ $i == $current ? 'active' : '' }}">
                                 {{ $i }}
                             </li>
                         </a>
                     @endfor
+
+                    {{-- Next Page Link --}}
                     @if ($collections->hasMorePages())
                         <a href="{{ $collections->nextPageUrl() }}" aria-label="Next">
                             <li class="page-item arr">
@@ -147,7 +151,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#lang-{{ $language->id }}">
-                                    {{ tt($language->name) }}
+                                    {{ $language->name }}
                                 </a>
                             </li>
                         @endforeach
@@ -175,25 +179,18 @@
                     <label class="mt-2">{{ tt('Tags:') }}</label>
                     <select name="tags[]" class="form-control select2" multiple>
                         @foreach($tags as $tag)
-                                                @php
-                                                    $tagTranslation = $tag ? $tag->translations->firstWhere('language_id', $preferredLanguage) : null;
-                                                @endphp
-                                                <option value="{{ $tag->id }}">{{ $tagTranslation->name }}</option>
+                            <option value="{{ $tag->id }}">{{ $tag->name }}</option>
                         @endforeach
                     </select>
 
                     <label class="mt-2">{{ tt('Artworks:') }}</label>
                     <select name="artworks[]" class="form-control select2-artwork" multiple>
                         @foreach($artworks as $artwork)
-                                                @php
-                                                    $artworkTranslation = $artwork ? $artwork->translations->firstWhere('language_id', $preferredLanguage) : null;
-                                                    $artistTranslation = $artwork->artist->translations->firstWhere('language_id', $preferredLanguage);
-                                                @endphp
-                                                <option value="{{ $artwork->id }} "
-                                                    data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
-                                                    data-artist="{{ $artistTranslation->first_name }} {{ $artistTranslation->last_name }}">
-                                                    {{ $artworkTranslation->name }}
-                                                </option>
+                            <option value="{{ $artwork->id }}"
+                                data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
+                                data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
+                                {{ $artwork->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -223,7 +220,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#edit-lang-{{ $language->id }}">
-                                    {{ tt($language->name) }}
+                                    {{ $language->name }}
                                 </a>
                             </li>
                         @endforeach
@@ -250,25 +247,18 @@
                     <label class="mt-2">{{ tt('Tags:') }}</label>
                     <select name="tags[]" class="form-control select2" multiple>
                         @foreach($tags as $tag)
-                                                @php
-                                                    $tagTranslation = $tag ? $tag->translations->firstWhere('language_id', $preferredLanguage) : null;
-                                                @endphp
-                                                <option value="{{ $tag->id }}">{{ $tagTranslation->name }}</option>
+                            <option value="{{ $tag->id }}">{{ $tag->name }}</option>
                         @endforeach
                     </select>
 
                     <label class="mt-2">{{ tt('Artworks:') }}</label>
                     <select name="artworks[]" class="form-control select2-artwork" multiple>
                         @foreach($artworks as $artwork)
-                                                @php
-                                                    $artworkTranslation = $artwork ? $artwork->translations->firstWhere('language_id', $preferredLanguage) : null;
-                                                    $artistTranslation = $artwork->artist->translations->firstWhere('language_id', $preferredLanguage);
-                                                @endphp
-                                                <option value="{{ $artwork->id }} "
-                                                    data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
-                                                    data-artist="{{ $artistTranslation->first_name }} {{ $artistTranslation->last_name }}">
-                                                    {{ $artworkTranslation->name }}
-                                                </option>
+                            <option value="{{ $artwork->id }}"
+                                data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
+                                data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
+                                {{ $artwork->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -437,6 +427,7 @@
 
                 // Set selected artworks
                 let selectedArtworks = artworks.map(art => art.id);
+                console.log(selectedArtworks)
                 $('.select2-artwork').val(selectedArtworks).trigger('change');
 
                 // Show the modal
