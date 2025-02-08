@@ -7,51 +7,51 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Orders</h3>
+        <h3>{{ tt('Orders') }}</h3>
     </div>
     <hr>
 
     <!-- Search & Filter Bar -->
-    <div class="d-flex justify-content-end seperate">
+    <div class="d-flex justify-content-end separate">
         <form method="GET" action="{{ route('dashboard.orders.index') }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']) || isset($_GET['status']) || isset($_GET['date_range']))
-                    <a href="{{ route('dashboard.orders.index') }}" class="btn btn-secondary me-0">Reset</a>
+                    <a href="{{ route('dashboard.orders.index') }}" class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
-                <input type="text" name="search" class="form-control" placeholder="Search by ID or Client Name"
+                <input type="text" name="search" class="form-control" placeholder="{{ tt('Search by ID or Client Name') }}"
                     value="{{ request('search', '') }}">
 
                 <select name="status" class="form-select">
-                    <option value="all">All Statuses</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    <option value="all">{{ tt('All Statuses') }}</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>{{ tt('Pending') }}</option>
+                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>{{ tt('Completed') }}</option>
+                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>{{ tt('Cancelled') }}</option>
                 </select>
 
                 <input type="text" name="date_range" id="dateRangePicker" class="form-control"
-                    placeholder="Select Date Range" value="{{ request('date_range', '') }}">
+                    placeholder="{{ tt('Select Date Range') }}" value="{{ request('date_range', '') }}">
 
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Orders Table -->
     @if ($orders->isEmpty())
-        <center class="alert alert-warning">No orders found.</center>
+        <center class="alert alert-warning">{{ tt('No orders found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th class="select"><input type="checkbox" id="selectAll"> Select</th>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Mobile</th>
-                    <th>Address</th>
-                    <th>Date & Time</th>
-                    <th>Status</th>
-                    <th>Total Amount</th>
-                    <th>Actions</th>
+                    <th class="select"><input type="checkbox" id="selectAll"> {{ tt('Select') }}</th>
+                    <th>{{ tt('Order ID') }}</th>
+                    <th>{{ tt('Customer') }}</th>
+                    <th>{{ tt('Mobile') }}</th>
+                    <th>{{ tt('Address') }}</th>
+                    <th>{{ tt('Date & Time') }}</th>
+                    <th>{{ tt('Status') }}</th>
+                    <th>{{ tt('Total Amount') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -84,14 +84,41 @@
             </tbody>
         </table>
 
-        {{ $orders->links() }}
+        
+        @if ($orders->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$orders->onFirstPage())
+                        <a href="{{ $orders->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $orders->lastPage(); $i++)
+                        <a href="{{ $orders->url($i) }}">
+                            <li class="page-item {{ $i == $orders->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($orders->hasMorePages())
+                        <a href="{{ $orders->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
 
         <!-- Bulk Actions -->
         <div class="bulks mt-3">
             <form method="POST" action="{{ route('dashboard.orders.bulk-delete') }}" id="bulkDeleteForm">
                 @csrf
                 <input type="hidden" name="ids" id="bulkDeleteIds">
-                <button type="submit" class="btn btn-danger">Delete Selected</button>
+                <button type="submit" class="btn btn-danger">{{ tt('Delete Selected') }}</button>
             </form>
 
             <form method="POST" action="{{ route('dashboard.orders.bulk-update-status') }}" id="bulkUpdateStatusForm"
@@ -99,12 +126,12 @@
                 @csrf
                 <div class="input-group">
                     <select name="status" class="form-select w-auto">
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="pending">{{ tt('Pending') }}</option>
+                        <option value="completed">{{ tt('Completed') }}</option>
+                        <option value="cancelled">{{ tt('Cancelled') }}</option>
                     </select>
                     <input type="hidden" name="ids" id="bulkUpdateStatusIds">
-                    <button type="submit" class="btn btn-primary">Update Status</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Update Status') }}</button>
                 </div>
             </form>
         </div>
@@ -116,7 +143,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Order Details</h5>
+                <h5 class="modal-title">{{ tt('Order Details') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -129,33 +156,33 @@
 <!-- Edit Order Modal -->
 <div class="modal fade" id="editOrderModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST">
+        <form method="POST" action="">
             @csrf
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Order</h5>
+                    <h5 class="modal-title">{{ tt('Edit Order') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Order Status:</label>
+                    <label>{{ tt('Order Status') }}:</label>
                     <select name="order_status" class="form-control">
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="pending">{{ tt('Pending') }}</option>
+                        <option value="completed">{{ tt('Completed') }}</option>
+                        <option value="cancelled">{{ tt('Cancelled') }}</option>
                     </select>
 
-                    <label class="mt-2">Customer:</label>
+                    <label class="mt-2">{{ tt('Customer') }}:</label>
                     <input type="text" name="customer_name" class="form-control" readonly>
 
-                    <label class="mt-2">Customer Phone:</label>
+                    <label class="mt-2">{{ tt('Customer Phone') }}:</label>
                     <input type="text" name="customer_phone" class="form-control" readonly>
 
-                    <label class="mt-2">Address:</label>
+                    <label class="mt-2">{{ tt('Address') }}:</label>
                     <input type="text" name="address" class="form-control" readonly>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -168,14 +195,14 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
+<!-- date -->
 <script>
     $(document).ready(function () {
         $('#dateRangePicker').daterangepicker({
             autoUpdateInput: false,
             locale: {
                 format: 'YYYY-MM-DD',
-                cancelLabel: 'Clear'
+                cancelLabel: '{{ tt('Clear') }}'
             }
         });
 
@@ -188,6 +215,7 @@
         });
     });
 </script>
+<!-- view -->
 <script>
     function viewOrder(orderId) {
         $.ajax({
@@ -195,34 +223,36 @@
             type: 'GET',
             success: function (response) {
                 let order = response.order;
+                console.log(order);
                 let artworksHtml = order.items.map(item => `
                     <div class="d-flex align-items-center border-bottom py-2">
                         <img src="${item.artwork.photos ? JSON.parse(item.artwork.photos)[0] : ''}" class="rounded" width="50" height="50" style="margin-right: 10px;">
                         <div>
                             <strong>${item.artwork.name}</strong>
-                            <p class="text-muted">Size: ${item.size}, Quantity: ${item.quantity}, Price: $${parseFloat(item.price).toFixed(2)}</p>
+                            <p class="text-muted">{{ tt('Size') }}: ${item.size}, {{ tt('Quantity') }}: ${item.quantity}, {{ tt('Price') }}: $${parseFloat(item.price).toFixed(2)}</p>
                         </div>
                     </div>
                 `).join('');
 
                 $('#viewOrderModal .modal-body').html(`
-                    <h5>Order ID: ${order.id}</h5>
-                    <p><strong>Customer:</strong> ${order.user.first_name} ${order.user.last_name}</p>
-                    <p><strong>Mobile:</strong> ${order.user.phone}</p>
-                    <p><strong>Address:</strong> ${order.address.address}, ${order.address.city}, ${order.address.zone}</p>
-                    <p><strong>Total:</strong> $${parseFloat(order.total_amount).toFixed(2)}</p>
-                    <p><strong>Status:</strong> ${order.order_status}</p>
-                    <h6>Ordered Artworks:</h6>
+                    <h5>{{ tt('Order ID') }}: ${order.id}</h5>
+                    <p><strong>{{ tt('Customer') }}:</strong> ${order.user.first_name} ${order.user.last_name}</p>
+                    <p><strong>{{ tt('Mobile') }}:</strong> ${order.user.phone}</p>
+                    <p><strong>{{ tt('Address') }}:</strong> ${order.address.address}, ${order.address.city}, ${order.address.zone}</p>
+                    <p><strong>{{ tt('Total') }}:</strong> $${parseFloat(order.total_amount).toFixed(2)}</p>
+                    <p><strong>{{ tt('Status') }}:</strong> ${order.order_status}</p>
+                    <h6>{{ tt('Ordered Artworks') }}:</h6>
                     ${artworksHtml}
                 `);
                 $('#viewOrderModal').modal('show');
             },
             error: function () {
-                alert('Failed to load order details.');
+                alert('{{ tt('Failed to load order details.') }}');
             }
         });
     }
 </script>
+<!-- edit -->
 <script>
     function editOrder(orderId) {
         $.ajax({
@@ -234,21 +264,22 @@
                 $('#editOrderModal select[name="order_status"]').val(order.order_status);
                 $('#editOrderModal input[name="customer_name"]').val(order.user.first_name + ' ' + order.user.last_name);
                 $('#editOrderModal input[name="customer_phone"]').val(order.user.phone);
-                $('#editOrderModal input[name="address"]').val(order.address.address);
+                $('#editOrderModal input[name="address"]').val(order.address.address + ', ' + order.address.zone + ', ' + order.address.city);
 
                 $('#editOrderModal form').attr('action', `/dashboard/orders/${order.id}`);
                 $('#editOrderModal').modal('show');
             },
             error: function () {
-                alert('Failed to load order details.');
+                alert('{{ tt('Failed to load order details.') }}');
             }
         });
     }
 </script>
+<!-- bulks -->
 <script>
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm('Are you sure you want to delete this order?')) {
+        if (confirm('{{ tt('Are you sure you want to delete this order?') }}')) {
             event.target.closest('form').submit();
         }
     }
@@ -267,7 +298,7 @@
             .map(checkbox => checkbox.value);
 
         if (selectedIds.length === 0) {
-            alert('Select at least one order to delete.');
+            alert('{{ tt('Select at least one order to delete.') }}');
             return;
         }
 
@@ -282,7 +313,7 @@
             .map(checkbox => checkbox.value);
 
         if (selectedIds.length === 0) {
-            alert('Select at least one order to update.');
+            alert('{{ tt('Select at least one order to update.') }}');
             return;
         }
 
@@ -290,6 +321,7 @@
         this.submit();
     });
 </script>
+<!-- sidebar -->
 <script>
     document.querySelector('#orders').classList.add('active');
     document.querySelector('#orders .nav-link ').classList.add('active');

@@ -68,15 +68,31 @@ class LanguageController extends Controller
     public function getLanguage(Request $request, $language_id)
     {
         $language = Language::findOrFail($language_id);
-    
+
         // Get all unique tokens from the static_translations table (regardless of language)
         $allTokens = StaticTranslation::distinct()->pluck('token');
-    
+
+        // Check if there is a 'search' input in the request and if it has a value
+        if ($request->has('search') && $request->input('search')) {
+            $searchTerm = $request->input('search');
+
+            // Format the search term to the required format (e.g., 'welcome_to_marasem')
+            $formattedSearchTerm = str_replace(' ', '_', strtolower($searchTerm));
+
+            // Filter tokens that match the formatted search term
+            $allTokens = $allTokens->filter(function ($token) use ($formattedSearchTerm) {
+                return strpos($token, $formattedSearchTerm) !== false; // Match token that contains the formatted search term
+            });
+        }
+
+        // Get the translations matching the filtered tokens
         $translations = $allTokens->map(function ($token) use ($language_id) {
-            return StaticTranslation::where('language_id', $language_id)->where('token', $token)->first() ?? 
-                   new StaticTranslation(['token' => $token, 'language_id' => $language_id, 'translation' => '']);
+            return StaticTranslation::where('language_id', $language_id)
+                ->where('token', $token)
+                ->first() ??
+                new StaticTranslation(['token' => $token, 'language_id' => $language_id, 'translation' => '']);
         });
-    
+
         // Pagination logic (manually paginating since it's a collection)
         $perPage = 10;
         $page = request()->get('page', 1);
@@ -87,7 +103,7 @@ class LanguageController extends Controller
             $page,
             ['path' => request()->url()]
         );
-    
+
         return view('dashboard.languages.language', compact('translations', 'language'));
     }
 

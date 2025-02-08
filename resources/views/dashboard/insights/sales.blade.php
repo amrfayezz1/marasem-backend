@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container dashboard">
-    <h3>Sales Insights</h3>
+    <h3>{{ tt('Sales Insights') }}</h3>
     <hr>
 
     <!-- Date Range Filter -->
@@ -10,18 +10,18 @@
         <div class="d-flex justify-content-between flex-wrap gap-4">
             <div class="row col-md-8">
                 <div class="col-md-4">
-                    <label>Start Date:</label>
+                    <label>{{ tt('Start Date:') }}</label>
                     <input type="date" name="start_date"
-                        value="{{ request('start_date', Date($startDate)) }}" class="form-control">
+                        value="{{ request('start_date', $startDate->format('Y-m-d')) }}" class="form-control">
                 </div>
                 <div class="col-md-4">
-                    <label>End Date:</label>
-                    <input type="date" name="end_date" value="{{ request('end_date', Date($endDate)) }}"
+                    <label>{{ tt('End Date:') }}</label>
+                    <input type="date" name="end_date" value="{{ request('end_date', $endDate->format('Y-m-d')) }}"
                         class="form-control">
                 </div>
             </div>
             <div class="col-md-1 d-flex align-items-end justify-self-end">
-                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <button type="submit" class="btn btn-primary w-100">{{ tt('Filter') }}</button>
             </div>
         </div>
     </form>
@@ -32,7 +32,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Revenue by Category</h5>
+                    <h5 class="card-title">{{ tt('Revenue by Category') }}</h5>
                     <canvas id="categoryRevenueChart"></canvas>
                 </div>
             </div>
@@ -42,7 +42,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Revenue by Payment Method</h5>
+                    <h5 class="card-title">{{ tt('Revenue by Payment Method') }}</h5>
                     <canvas id="paymentMethodChart"></canvas>
                 </div>
             </div>
@@ -54,7 +54,7 @@
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Sales Trends</h5>
+                    <h5 class="card-title">{{ tt('Sales Trends') }}</h5>
                     <canvas id="salesTrendsChart"></canvas>
                 </div>
             </div>
@@ -66,10 +66,10 @@
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Top 10 Best-Selling Products</h5>
+                    <h5 class="card-title">{{ tt('Top 10 Best-Selling Products') }}</h5>
                     <ul>
                         @foreach($bestSellingProducts as $product)
-                            <li>{{ $product->name }} - {{ $product->total_sold }} Sold
+                            <li>{{ $product->name }} - {{ $product->total_sold }} {{ tt('Sold') }}
                                 (${{ number_format($product->total_revenue, 2) }})</li>
                         @endforeach
                     </ul>
@@ -83,7 +83,7 @@
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Average Order Value</h5>
+                    <h5 class="card-title">{{ tt('Average Order Value') }}</h5>
                     <h2>${{ number_format($averageOrderValue, 2) }}</h2>
                 </div>
             </div>
@@ -119,7 +119,7 @@
         data: {
             labels: @json($revenueByPaymentMethod->pluck('method')),
             datasets: [{
-                label: 'Revenue',
+                label: '{{ tt('Revenue') }}',
                 data: @json($revenueByPaymentMethod->pluck('revenue')),
                 backgroundColor: '#36A2EB'
             }]
@@ -138,7 +138,7 @@
         data: {
             labels: @json($salesTrends->pluck('date')),
             datasets: [{
-                label: 'Revenue',
+                label: '{{ tt('Revenue') }}',
                 data: @json($salesTrends->pluck('revenue')),
                 borderColor: '#6C63FF',
                 fill: false

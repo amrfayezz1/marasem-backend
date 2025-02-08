@@ -7,27 +7,27 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Events</h3>
+        <h3>{{ tt('Events') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addEventModal" class="btn btn-primary">
-            Create &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Create') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
 
     <!-- Events Table -->
     @if ($events->isEmpty())
-        <center class="alert alert-warning">No events found.</center>
+        <center class="alert alert-warning">{{ tt('No events found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
                     <th>
-                        <input type="checkbox" id="selectAll"> Select
+                        <input type="checkbox" id="selectAll"> {{ tt('Select') }}
                     </th>
-                    <th>Title</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>{{ tt('Title') }}</th>
+                    <th>{{ tt('Date') }}</th>
+                    <th>{{ tt('Status') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,7 +36,7 @@
                         <td>
                             <input type="checkbox" name="event_ids[]" value="{{ $event->id }}">
                         </td>
-                        <td>{{ $event->title ?? 'N/A' }}</td>
+                        <td>{{ $event->title ?? tt('N/A') }}</td>
                         <td>{{ $event->date_start }} - {{ $event->date_end }}</td>
                         <td>
                             <span class="badge {{ $event->status == 'upcoming' ? 'bg-success' : 'bg-secondary' }}">
@@ -57,25 +57,52 @@
             </tbody>
         </table>
 
-        {{ $events->links() }}
+
+        @if ($events->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$events->onFirstPage())
+                        <a href="{{ $events->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $events->lastPage(); $i++)
+                        <a href="{{ $events->url($i) }}">
+                            <li class="page-item {{ $i == $events->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($events->hasMorePages())
+                        <a href="{{ $events->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
         <!-- Bulk Action Buttons -->
         <div class="bulks mt-3">
             <form method="POST" action="{{ route('dashboard.events.bulk-delete') }}" id="bulkDeleteForm">
                 @csrf
                 <input type="hidden" name="ids" id="bulkDeleteIds">
-                <button type="submit" id="bulkDeleteBtn" class="btn btn-danger">Delete Selected</button>
+                <button type="submit" id="bulkDeleteBtn" class="btn btn-danger">{{ tt('Delete Selected') }}</button>
             </form>
 
             <form method="POST" action="{{ route('dashboard.events.bulk-publish') }}" class="d-inline">
                 @csrf
                 <input type="hidden" name="ids" id="bulkPublishIds">
-                <button type="submit" id="bulkPublishBtn" class="btn btn-success">Publish Selected</button>
+                <button type="submit" id="bulkPublishBtn" class="btn btn-success">{{ tt('Publish Selected') }}</button>
             </form>
 
             <form method="POST" action="{{ route('dashboard.events.bulk-unpublish') }}" class="d-inline">
                 @csrf
                 <input type="hidden" name="ids" id="bulkUnpublishIds">
-                <button type="submit" id="bulkUnpublishBtn" class="btn btn-warning">Unpublish Selected</button>
+                <button type="submit" id="bulkUnpublishBtn" class="btn btn-warning">{{ tt('Unpublish Selected') }}</button>
             </form>
         </div>
     @endif
@@ -88,7 +115,7 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Event</h5>
+                    <h5 class="modal-title">{{ tt('Add Event') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -98,7 +125,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -109,13 +136,13 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="lang-{{ $language->id }}">
-                                <label class="mt-2">Title:</label>
+                                <label class="mt-2">{{ tt('Title:') }}</label>
                                 <input type="text" name="translations[{{ $loop->index }}][title]" class="form-control"
                                     required>
-                                <label class="mt-2">Description:</label>
+                                <label class="mt-2">{{ tt('Description:') }}</label>
                                 <textarea name="translations[{{ $loop->index }}][description]" class="form-control"
                                     required></textarea>
-                                <label class="mt-2">Location:</label>
+                                <label class="mt-2">{{ tt('Location:') }}</label>
                                 <input type="text" name="translations[{{ $loop->index }}][location]" class="form-control"
                                     required>
                                 <input type="hidden" name="translations[{{ $loop->index }}][language_id]"
@@ -124,32 +151,32 @@
                         @endforeach
                     </div>
 
-                    <label class="mt-3">Start Date:</label>
+                    <label class="mt-3">{{ tt('Start Date:') }}</label>
                     <input type="date" name="date_start" class="form-control" required>
 
-                    <label class="mt-2">End Date:</label>
+                    <label class="mt-2">{{ tt('End Date:') }}</label>
                     <input type="date" name="date_end" class="form-control" required>
 
-                    <label class="mt-2">Start Time:</label>
+                    <label class="mt-2">{{ tt('Start Time:') }}</label>
                     <input type="time" name="time_start" class="form-control" required>
 
-                    <label class="mt-2">End Time:</label>
+                    <label class="mt-2">{{ tt('End Time:') }}</label>
                     <input type="time" name="time_end" class="form-control" required>
 
-                    <label class="mt-2">Location URL:</label>
+                    <label class="mt-2">{{ tt('Location URL:') }}</label>
                     <input type="url" name="location_url" class="form-control">
 
-                    <label class="mt-2">Cover Image:</label>
+                    <label class="mt-2">{{ tt('Cover Image:') }}</label>
                     <input type="file" name="cover_img" class="form-control" required>
 
-                    <label class="mt-3">Status:</label>
+                    <label class="mt-3">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="upcoming">Upcoming</option>
-                        <option value="ended">Ended</option>
+                        <option value="upcoming">{{ tt('Upcoming') }}</option>
+                        <option value="ended">{{ tt('Ended') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -164,7 +191,7 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Event</h5>
+                    <h5 class="modal-title">{{ tt('Edit Event') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -175,7 +202,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#edit-lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -186,45 +213,45 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="edit-lang-{{ $language->id }}">
-                                <label class="mt-2">Title:</label>
+                                <label class="mt-2">{{ tt('Title:') }}</label>
                                 <input type="text" name="translations[{{ $language->id }}][title]" class="form-control">
-                                <label class="mt-2">Description:</label>
+                                <label class="mt-2">{{ tt('Description:') }}</label>
                                 <textarea name="translations[{{ $language->id }}][description]"
                                     class="form-control"></textarea>
-                                <label class="mt-2">Location:</label>
+                                <label class="mt-2">{{ tt('Location:') }}</label>
                                 <input type="text" name="translations[{{ $language->id }}][location]" class="form-control">
                                 <input type="hidden" name="translations[{{ $language->id }}][language_id]"
                                     value="{{ $language->id }}">
                             </div>
                         @endforeach
                     </div>
-                    <label>Start Date:</label>
+                    <label>{{ tt('Start Date:') }}</label>
                     <input type="date" name="date_start" class="form-control" required>
 
-                    <label class="mt-2">End Date:</label>
+                    <label class="mt-2">{{ tt('End Date:') }}</label>
                     <input type="date" name="date_end" class="form-control" required>
 
-                    <label class="mt-2">Start Time:</label>
+                    <label class="mt-2">{{ tt('Start Time:') }}</label>
                     <input type="time" name="time_start" class="form-control" required>
 
-                    <label class="mt-2">End Time:</label>
+                    <label class="mt-2">{{ tt('End Time:') }}</label>
                     <input type="time" name="time_end" class="form-control" required>
 
-                    <label class="mt-2">Location URL:</label>
+                    <label class="mt-2">{{ tt('Location URL:') }}</label>
                     <input type="url" name="location_url" class="form-control">
 
-                    <label class="mt-2">Cover Image:</label>
+                    <label class="mt-2">{{ tt('Cover Image:') }}</label>
                     <input type="file" name="cover_img" class="form-control">
                     <div class="event-cover-img mt-2"></div>
 
-                    <label class="mt-3">Status:</label>
+                    <label class="mt-3">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="upcoming">Upcoming</option>
-                        <option value="ended">Ended</option>
+                        <option value="upcoming">{{ tt('Upcoming') }}</option>
+                        <option value="ended">{{ tt('Ended') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -235,11 +262,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Preview Event</h5>
+                <h5 class="modal-title">{{ tt('Preview Event') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                Loading...
+                {{ tt('Loading...') }}
             </div>
         </div>
     </div>
@@ -279,7 +306,7 @@
                 $('#editEventModal').modal('show');
             },
             error: function () {
-                alert('Failed to load event details.');
+                alert('{{ tt('Failed to load event details.') }}');
             }
         });
     }
@@ -293,27 +320,27 @@
                 let event = response.event;
                 let translationsHtml = event.translations.map(t => `
                     <h6>${t.language ? t.language.name : ''}:</h6>
-                    <p><strong>Title:</strong> ${t.title}</p>
-                    <p><strong>Description:</strong> ${t.description}</p>
-                    <p><strong>Location:</strong> ${t.location}</p>
+                    <p><strong>{{ tt('Title:') }}</strong> ${t.title}</p>
+                    <p><strong>{{ tt('Description:') }}</strong> ${t.description}</p>
+                    <p><strong>{{ tt('Location:') }}</strong> ${t.location}</p>
                 `).join('');
 
                 $('#previewEventModal .modal-body').html(`
                     <h5><strong>${event.translations[0].title}</strong></h5>
                     <p>${event.translations[0].description}</p>
-                    <p><strong>Location:</strong> ${event.translations[0].location}</p>
-                    <p><strong>Date:</strong> ${event.date_start} - ${event.date_end}</p>
-                    <p><strong>Time:</strong> ${event.time_start} - ${event.time_end}</p>
-                    <p><strong>Status:</strong> ${event.status}</p>
-                    <p><strong>Location URL:</strong> <a href="${event.location_url}" target="_blank">${event.location_url}</a></p>
-                    <h6>Translations:</h6>
+                    <p><strong>{{ tt('Location:') }}</strong> ${event.translations[0].location}</p>
+                    <p><strong>{{ tt('Date:') }}</strong> ${event.date_start} - ${event.date_end}</p>
+                    <p><strong>{{ tt('Time:') }}</strong> ${event.time_start} - ${event.time_end}</p>
+                    <p><strong>{{ tt('Status:') }}</strong> ${event.status}</p>
+                    <p><strong>{{ tt('Location URL:') }}</strong> <a href="${event.location_url}" target="_blank">${event.location_url}</a></p>
+                    <h6>{{ tt('Translations:') }}</h6>
                     ${translationsHtml}
                     <img src="/storage/${event.cover_img_path}" width="100%">
                 `);
                 $('#previewEventModal').modal('show');
             },
             error: function () {
-                alert('Failed to load event details.');
+                alert('{{ tt('Failed to load event details.') }}');
             }
         });
     }
@@ -321,7 +348,7 @@
 <script>
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+        if (confirm("{{ tt('Are you sure you want to delete this event? This action cannot be undone.') }}")) {
             event.target.closest('form').submit();
         }
     }
@@ -335,7 +362,7 @@
     function updateBulkActionInput(fieldId) {
         const selectedIds = getSelectedEventIds();
         if (selectedIds.length === 0) {
-            alert('Select at least one event.');
+            alert('{{ tt('Select at least one event.') }}');
             return false;
         }
         document.getElementById(fieldId).value = JSON.stringify(selectedIds);

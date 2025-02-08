@@ -45,7 +45,7 @@ class TranslationController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $translation = translate_static($request->token);
+        $translation = tt($request->token);
 
         return response()->json([
             'token' => $request->token,

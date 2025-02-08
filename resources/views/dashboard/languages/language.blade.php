@@ -7,37 +7,37 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Dictionary for {{ $language->name }}</h3>
-        <a href="{{ route('dashboard.languages.index') }}" class="btn btn-secondary">Back to Languages</a>
+        <h3>{{ tt('Dictionary for') }} {{ tt($language->name) }}</h3>
+        <a href="{{ route('dashboard.languages.index') }}" class="btn btn-secondary">{{ tt('Back to Languages') }}</a>
     </div>
     <hr>
 
     <!-- Search Bar -->
-    <div class="d-flex justify-content-end seperate">
+    <div class="d-flex justify-content-end separate">
         <form method="GET" action="{{ route('dashboard.languages.show', $language->id) }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']))
                     <a href="{{ route('dashboard.languages.show', $language->id) }}"
-                        class="btn btn-secondary me-0">Reset</a>
+                        class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
                 <input type="text" name="search" class="form-control" aria-label="Search..."
-                    placeholder="Search token or translation..." value="{{ request('search', '') }}">
-                <button type="submit" class="btn btn-primary">Search</button>
+                    placeholder="{{ tt('Search token or translation...') }}" value="{{ request('search', '') }}">
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Translations Table -->
     @if ($translations->isEmpty())
-        <center class="alert alert-warning">No translations found.</center>
+        <center class="alert alert-warning">{{ tt('No translations found.') }}</center>
     @else
         <form method="POST" action="{{ route('dashboard.languages.updateLanguage', $language->id) }}" id="translationForm">
             @csrf
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Token</th>
-                        <th>Translation ({{ $language->name }})</th>
+                        <th>{{ tt('Token') }}</th>
+                        <th>{{ tt('Translation') }} ({{ tt($language->name) }})</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,15 +58,42 @@
                 </tbody>
             </table>
 
-            {{ $translations->links() }}
+            @if ($translations->hasPages())
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination">
+                        @if (!$translations->onFirstPage())
+                            <a href="{{ $translations->previousPageUrl() }}" aria-label="Previous">
+                                <li class="page-item arr">
+                                    <i class="fas fa-chevron-left"></i>
+                                </li>
+                            </a>
+                        @endif
+                        @for ($i = 1; $i <= $translations->lastPage(); $i++)
+                            <a href="{{ $translations->url($i) }}">
+                                <li class="page-item {{ $i == $translations->currentPage() ? 'active' : '' }}">
+                                    {{ $i }}
+                                </li>
+                            </a>
+                        @endfor
+                        @if ($translations->hasMorePages())
+                            <a href="{{ $translations->nextPageUrl() }}" aria-label="Next">
+                                <li class="page-item arr">
+                                    <i class="fas fa-chevron-right"></i>
+                                </li>
+                            </a>
+                        @endif
+                    </ul>
+                </nav>
+            @endif
 
             <!-- Save Button -->
             <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Save Translations</button>
+                <button type="submit" class="btn btn-primary">{{ tt('Save Translations') }}</button>
             </div>
         </form>
     @endif
 </div>
+
 <!-- Toast Notification -->
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="toastMessage" class="toast align-items-center text-white bg-success border-0" role="alert"
@@ -99,10 +126,10 @@
             .then(response => response.json())
             .then(data => {
                 showToast(data.message, 'success'); // Show success toast
-                setTimeout(() => hideToast(), 1500); // Reload after short delay
+                setTimeout(() => hideToast(), 1500); // Hide after short delay
             })
             .catch(error => {
-                showToast('Error updating translations.', 'danger'); // Show error toast
+                showToast('{{ tt('Error updating translations.') }}', 'danger'); // Show error toast
             });
     });
 
@@ -123,6 +150,7 @@
         toast.hide();
     }
 </script>
+
 <script>
     document.querySelector('#languages').classList.add('active');
     document.querySelector('#languages .nav-link ').classList.add('active');

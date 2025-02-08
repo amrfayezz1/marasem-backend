@@ -7,9 +7,9 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Currencies</h3>
+        <h3>{{ tt('Currencies') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addCurrencyModal" class="btn btn-primary">
-            Create &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Create') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
@@ -19,26 +19,27 @@
         <form method="GET" action="{{ route('dashboard.currencies.index') }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']))
-                    <a href="{{ route('dashboard.currencies.index') }}" class="btn btn-secondary me-0">Reset</a>
+                    <a href="{{ route('dashboard.currencies.index') }}" class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
                 <input type="text" name="search" class="form-control" aria-label="Search..."
-                    placeholder="Search by Name or Symbol..." value="{{ request('search', '') }}">
-                <button type="submit" class="btn btn-primary">Search</button>
+                    placeholder="{{ tt('Search by Name, Symbol or Rate...') }}" value="{{ request('search', '') }}">
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Currencies Table -->
     @if ($currencies->isEmpty())
-        <center class="alert alert-warning">No currencies found.</center>
+        <center class="alert alert-warning">{{ tt('No currencies found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th class="select"><input type="checkbox" id="selectAll"> Select</th>
-                    <th>Name</th>
-                    <th>Symbol</th>
-                    <th>Actions</th>
+                    <th class="select"><input type="checkbox" id="selectAll"> {{ tt('Select') }}</th>
+                    <th>{{ tt('Name') }}</th>
+                    <th>{{ tt('Symbol') }}</th>
+                    <th>{{ tt('Rate') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,6 +48,7 @@
                         <td><input type="checkbox" name="currency_ids[]" value="{{ $currency->id }}"></td>
                         <td>{{ $currency->name }}</td>
                         <td>{{ $currency->symbol }}</td>
+                        <td>{{ $currency->rate }}</td>
                         <td>
                             <span onclick="editCurrency({{ $currency->id }})"><i class="fa-solid fa-pen-to-square"></i></span>
                             <form action="{{ route('dashboard.currencies.destroy', $currency->id) }}" method="POST"
@@ -61,13 +63,40 @@
             </tbody>
         </table>
 
-        {{ $currencies->links() }}
+
+        @if ($currencies->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$currencies->onFirstPage())
+                        <a href="{{ $currencies->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $currencies->lastPage(); $i++)
+                        <a href="{{ $currencies->url($i) }}">
+                            <li class="page-item {{ $i == $currencies->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($currencies->hasMorePages())
+                        <a href="{{ $currencies->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
 
         <!-- Bulk Delete Button -->
         <form method="POST" action="{{ route('dashboard.currencies.bulk-delete') }}" id="bulkDeleteForm">
             @csrf
             <input type="hidden" name="ids" id="bulkDeleteIds">
-            <button type="submit" class="btn btn-danger mt-3">Delete Selected</button>
+            <button type="submit" class="btn btn-danger mt-3">{{ tt('Delete Selected') }}</button>
         </form>
     @endif
 </div>
@@ -79,18 +108,21 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Currency</h5>
+                    <h5 class="modal-title">{{ tt('Add Currency') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Currency Name:</label>
+                    <label>{{ tt('Currency Name:') }}</label>
                     <input type="text" name="name" class="form-control" required maxlength="100">
 
-                    <label class="mt-2">Symbol:</label>
+                    <label class="mt-2">{{ tt('Symbol:') }}</label>
                     <input type="text" name="symbol" class="form-control" required maxlength="10">
+
+                    <label class="mt-2">{{ tt('Rate:') }}</label>
+                    <input type="text" name="rate" class="form-control" required>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -105,18 +137,21 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Currency</h5>
+                    <h5 class="modal-title">{{ tt('Edit Currency') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Currency Name:</label>
+                    <label>{{ tt('Currency Name:') }}</label>
                     <input type="text" name="name" class="form-control" required maxlength="100">
 
-                    <label class="mt-2">Symbol:</label>
+                    <label class="mt-2">{{ tt('Symbol:') }}</label>
                     <input type="text" name="symbol" class="form-control" required maxlength="10">
+
+                    <label class="mt-2">{{ tt('Rate:') }}</label>
+                    <input type="text" name="rate" class="form-control" required>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -139,14 +174,14 @@
                 $('#editCurrencyModal').modal('show');
             },
             error: function () {
-                alert('Failed to load currency details.');
+                alert('{{ tt('Failed to load currency details.') }}');
             }
         });
     }
 
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to delete this currency? This action cannot be undone.")) {
+        if (confirm("{{ tt('Are you sure you want to delete this currency? This action cannot be undone.') }}")) {
             event.target.closest('form').submit();
         }
     }
@@ -159,7 +194,7 @@
     function updateBulkDeleteInput() {
         const selectedIds = getSelectedCurrencyIds();
         if (selectedIds.length === 0) {
-            alert('Select at least one currency.');
+            alert('{{ tt('Select at least one currency.') }}');
             return false;
         }
         document.getElementById('bulkDeleteIds').value = JSON.stringify(selectedIds);

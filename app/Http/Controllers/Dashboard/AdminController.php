@@ -10,6 +10,7 @@ use App\Models\UserTranslation;
 use App\Models\AdminPrivilege;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use App\Mail\NewAdminNotification;
 
 class AdminController extends Controller
@@ -34,7 +35,7 @@ class AdminController extends Controller
 
     public function index(Request $request)
     {
-        $query = User::where('is_admin', 1)->with(['adminPrivileges', 'translations']);
+        $query = User::where('is_admin', '>', 0)->where('id', '!=', auth()->user()->id)->with(['adminPrivileges', 'translations']);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -59,16 +60,32 @@ class AdminController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        \Log::info($request->all());
+        $validator = Validator::make($request->all(), [
             'user_id' => 'nullable|exists:users,id', // If making an existing user an admin
-            'translations' => 'required_without:user_id|array',
-            'translations.*.language_id' => 'required|exists:languages,id',
-            'translations.*.first_name' => 'required|string|max:100',
-            'translations.*.last_name' => 'required|string|max:100',
 
             'email' => 'nullable|required_without:user_id|email|unique:users,email',
             'password' => 'nullable|required_without:user_id|string|min:6',
+
+            'translations' => ['nullable', 'array'],
+            'translations.*.language_id' => ['required_without:user_id'],
+            'translations.*.first_name' => ['required_without:user_id'],
+            'translations.*.last_name' => ['required_without:user_id'],
         ]);
+
+        // If an existing user is selected, ignore translations
+        if ($request->filled('user_id')) {
+            $validator->after(function ($validator) {
+                $validator->sometimes('translations', 'nullable', function ($input) {
+                    return false;
+                });
+            });
+        }
+
+        // Stop execution if validation fails
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         if ($request->user_id) {
             $user = User::findOrFail($request->user_id);
@@ -91,18 +108,18 @@ class AdminController extends Controller
                 'is_admin' => 1,
             ]);
 
-            // Send email notification
-            Mail::to($user->email)->queue(new NewAdminNotification($user, $request->password));
+            // Store translations
+            foreach ($request->translations as $translation) {
+                UserTranslation::updateOrCreate(
+                    ['user_id' => $user->id, 'language_id' => $translation['language_id']],
+                    ['first_name' => $translation['first_name'], 'last_name' => $translation['last_name']]
+                );
+            }
         }
 
-        // Store translations
-        foreach ($request->translations as $translation) {
-            UserTranslation::updateOrCreate(
-                ['user_id' => $user->id, 'language_id' => $translation['language_id']],
-                ['first_name' => $translation['first_name'], 'last_name' => $translation['last_name']]
-            );
-        }
 
+        // Send email notification
+        Mail::to($user->email)->send(new NewAdminNotification($user, $request->password));
         AdminPrivilege::create([
             'user_id' => $user->id,
             'privileges' => json_encode([]),
@@ -114,7 +131,7 @@ class AdminController extends Controller
     public function show($id)
     {
         $admin = User::with('adminPrivileges', 'translations')->findOrFail($id);
-        if($admin->adminPrivileges == NULL) {
+        if ($admin->adminPrivileges == NULL) {
             AdminPrivilege::create([
                 'user_id' => $admin->id,
                 'privileges' => json_encode([]),

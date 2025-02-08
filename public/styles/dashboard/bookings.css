@@ -105,8 +105,11 @@ aside {
     display: flex !important;
 }
 
-.select2-container {
+.fade~.select2-container {
     z-index: 1056;
+}
+
+.select2-container {
     width: 100%;
     color: black;
 }

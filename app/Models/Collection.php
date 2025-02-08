@@ -9,7 +9,7 @@ class Collection extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'tags', 'followers'];
+    protected $fillable = ['title', 'tags', 'followers', 'description', 'status'];
 
     public function translations()
     {

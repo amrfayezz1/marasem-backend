@@ -14,12 +14,14 @@ class CurrencyController extends Controller
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('symbol', 'LIKE', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('symbol', 'LIKE', "%{$search}%")
+                    ->orWhere('rate', 'LIKE', "%{$search}%");
+            });
         }
 
         $currencies = $query->paginate(10);
-
         return view('dashboard.currencies.index', compact('currencies'));
     }
 
@@ -28,9 +30,15 @@ class CurrencyController extends Controller
         $request->validate([
             'name' => 'required|string|unique:currencies,name|max:100',
             'symbol' => 'required|string|unique:currencies,symbol|max:10',
+            'rate' => 'required|numeric|min:0',
+        ], [
+            'name.required' => 'All fields are required.',
+            'symbol.required' => 'All fields are required.',
+            'rate.required' => 'All fields are required.',
+            'rate.numeric' => 'Rate must be a numeric value.',
         ]);
 
-        Currency::create($request->only(['name', 'symbol']));
+        Currency::create($request->only(['name', 'symbol', 'rate']));
 
         return redirect()->back()->with('success', 'Currency added successfully.');
     }
@@ -48,9 +56,15 @@ class CurrencyController extends Controller
         $request->validate([
             'name' => 'required|string|unique:currencies,name,' . $currency->id . '|max:100',
             'symbol' => 'required|string|unique:currencies,symbol,' . $currency->id . '|max:10',
+            'rate' => 'required|numeric|min:0',
+        ], [
+            'name.required' => 'All fields are required.',
+            'symbol.required' => 'All fields are required.',
+            'rate.required' => 'All fields are required.',
+            'rate.numeric' => 'Rate must be a numeric value.',
         ]);
 
-        $currency->update($request->only(['name', 'symbol']));
+        $currency->update($request->only(['name', 'symbol', 'rate']));
 
         return redirect()->back()->with('success', 'Currency updated successfully.');
     }

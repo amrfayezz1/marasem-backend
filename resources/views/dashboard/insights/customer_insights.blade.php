@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container dashboard">
-    <h3>Customer Behavior Insights</h3>
+    <h3>{{ tt('Customer Behavior Insights') }}</h3>
     <hr>
 
     <!-- Date Range Filter -->
@@ -10,18 +10,18 @@
         <div class="d-flex justify-content-between flex-wrap gap-4">
             <div class="row col-md-8">
                 <div class="col-md-4">
-                    <label>Start Date:</label>
-                    <input type="date" name="start_date" value="{{ request('start_date', Date($startDate)) }}" required
-                        class="form-control">
+                    <label>{{ tt('Start Date:') }}</label>
+                    <input type="date" name="start_date"
+                        value="{{ request('start_date', $startDate->format('Y-m-d')) }}" required class="form-control">
                 </div>
                 <div class="col-md-4">
-                    <label>End Date:</label>
-                    <input type="date" name="end_date" value="{{ request('end_date', Date($endDate)) }}" required
-                        class="form-control">
+                    <label>{{ tt('End Date:') }}</label>
+                    <input type="date" name="end_date" value="{{ request('end_date', $endDate->format('Y-m-d')) }}"
+                        required class="form-control">
                 </div>
             </div>
             <div class="col-md-1 d-flex align-items-end justify-self-end">
-                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <button type="submit" class="btn btn-primary w-100">{{ tt('Filter') }}</button>
             </div>
         </div>
     </form>
@@ -31,7 +31,7 @@
         <div class="col-md-12">
             <div class="card shadow-sm text-center">
                 <div class="card-body">
-                    <h5 class="card-title">Active Users (Last 30 Days)</h5>
+                    <h5 class="card-title">{{ tt('Active Users (Last 30 Days)') }}</h5>
                     <h2>{{ $activeUsers }}</h2>
                 </div>
             </div>
@@ -43,7 +43,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm text-center">
                 <div class="card-body">
-                    <h5 class="card-title">Abandoned Carts</h5>
+                    <h5 class="card-title">{{ tt('Abandoned Carts') }}</h5>
                     <h2>{{ $abandonedCarts }}</h2>
                 </div>
             </div>
@@ -53,7 +53,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Popular Categories</h5>
+                    <h5 class="card-title">{{ tt('Popular Categories') }}</h5>
                     <canvas id="popularCategoriesChart"></canvas>
                 </div>
             </div>
@@ -89,7 +89,7 @@
         data: {
             labels: @json($popularCategories->pluck('category')),
             datasets: [{
-                label: 'Views',
+                label: '{{ tt('Views') }}',
                 data: @json($popularCategories->pluck('views')),
                 backgroundColor: '#36A2EB'
             }]

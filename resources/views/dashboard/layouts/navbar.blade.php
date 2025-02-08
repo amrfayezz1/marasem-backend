@@ -7,6 +7,18 @@
                 aria-controls="sidemenu">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <!-- change lang -->
+            <form action="#" method="POST">
+                <select class="form-select" name="locale" onchange="updateLang()">
+                    @php
+                        $user_lang = auth()->user()->language->code;
+                    @endphp
+                    @foreach ($allanguages as $allanguage)
+                        <option value="{{ $allanguage->code }}" {{ $user_lang == $allanguage->code ? 'selected' : '' }}>
+                            {{ tt($allanguage->name) }}</option>
+                    @endforeach
+                </select>
+            </form>
         </div>
         <div id="navbarContent">
             <ul class="navbar-nav ms-auto">
@@ -28,11 +40,11 @@
                         @endif
                         <ul class="dropdown-menu">
                             <div class="name">
-                                Notifications
+                                {{ tt('Notifications') }}
                             </div>
                             @if (count($notifications) == 0)
                                 <div class="no-notifications">
-                                    No notifications so far.
+                                    {{ tt('No notifications so far.') }}
                                 </div>
                             @endif
                             @foreach($notifications as $notification)
@@ -44,7 +56,7 @@
                                     <div class="content">
                                         <p>{{ $notification->content }}</p>
                                         <span>{{ $notification->created_at }}</span>
-                                        <span>{{ $notification->created_at->diffForHumans() }}</span>
+                                        <!-- <span>{{ $notification->created_at->diffForHumans() }}</span> -->
                                     </div>
                                 </a>
                             @endforeach
@@ -64,10 +76,10 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                         <li>
-                            <a class="dropdown-item" href="/dashboard">Home</a>
+                            <a class="dropdown-item" href="/dashboard">{{ tt('Home') }}</a>
                         </li>
                         <li><a class="dropdown-item" href="#"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">{{ tt('Logout') }}</a>
                         </li>
                     </ul>
                 </li>

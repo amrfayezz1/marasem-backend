@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\CheckAdminPrivilege;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Dashboard\LoginController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -15,12 +16,11 @@ use App\Http\Controllers\Dashboard\ArtworkController;
 use App\Http\Controllers\Dashboard\SellerController;
 use App\Http\Controllers\Dashboard\BuyerController;
 use App\Http\Controllers\Dashboard\AdminController;
+use App\Http\Controllers\UserController;
 
 
 Route::get('login/{provider}/redirect', [SocialLoginController::class, 'redirectToProvider']);
 Route::get('login/{provider}/callback', [SocialLoginController::class, 'handleProviderCallback']);
-
-
 
 // Authentication Routes
 Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
@@ -30,7 +30,9 @@ Route::prefix('admin')->group(function () {
 });
 
 // Dashboard Routes (Only accessible when authenticated)
-Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboard.')->group(function () {
+Route::middleware(['auth', 'can:is-admin', CheckAdminPrivilege::class])->prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::post('/change-language', [UserController::class, 'updateLocale'])->name('change.language');
+
     Route::get('/', [DashboardController::class, 'index'])->name('index');
     Route::get('/sales', [DashboardController::class, 'sales'])->name('sales');
     Route::get('/customer-insights', [DashboardController::class, 'customer'])->name('customer-insights');
@@ -46,7 +48,10 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         Route::get('/{id}', [CollectionController::class, 'show'])->name('show');
         Route::put('/{id}', [CollectionController::class, 'update'])->name('update');
         Route::delete('/{id}', [CollectionController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle-active', [CollectionController::class, 'toggleActive'])->name('toggleActive');
         Route::post('/bulk-delete', [CollectionController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/{id}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+
     });
 
     Route::name('categories.')->prefix('categories')->group(function () {
@@ -67,6 +72,9 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         Route::post('/bulk-delete', [TagController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-publish', [TagController::class, 'bulkPublish'])->name('bulk-publish');
         Route::post('/bulk-unpublish', [TagController::class, 'bulkUnpublish'])->name('bulk-unpublish');
+        Route::post('/{id}/toggle-status', [TagController::class, 'toggleStatus'])
+            ->name('toggle-status');
+
     });
 
     Route::name('events.')->prefix('events')->group(function () {
@@ -136,6 +144,7 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         // Bulk Actions
         Route::post('/bulk-delete', [SellerController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-update-status', [SellerController::class, 'bulkUpdateStatus'])->name('bulk-update-status');
+        Route::post('/{id}/toggle-status', [SellerController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     Route::name('buyers.')->prefix('buyers')->group(function () {
@@ -149,7 +158,7 @@ Route::middleware(['auth', 'can:is-admin'])->prefix('dashboard')->name('dashboar
         Route::post('/bulk-delete', [BuyerController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/bulk-update-profile', [BuyerController::class, 'bulkUpdateProfile'])->name('bulk-update-profile');
     });
-    
+
     Route::name('admins.')->prefix('admins')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::post('/', [AdminController::class, 'store'])->name('store');

@@ -9,11 +9,16 @@ class CollectionTranslation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['collection_id', 'language_id', 'title'];
+    protected $fillable = ['collection_id', 'language_id', 'title', 'description'];
 
     public function collection()
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    public function language()
+    {
+        return $this->belongsTo(Language::class);
     }
 }
 

@@ -56,8 +56,14 @@ class OrderController extends Controller
 
         $request->validate([
             'order_status' => 'required|in:pending,completed,cancelled',
-            // 'user_id' => 'required|exists:users,id',
-            // 'address_id' => 'required|exists:addresses,id',
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|max:50',
+            'address' => 'required|string|max:255',
+        ], [
+            'order_status.required' => 'Order status is required.',
+            'customer_name.required' => 'Customer name is required.',
+            'customer_phone.required' => 'Customer phone is required.',
+            'address.required' => 'Address is required.',
         ]);
 
         $order->update($request->only([
@@ -72,9 +78,13 @@ class OrderController extends Controller
     public function destroy($id)
     {
         $order = Order::findOrFail($id);
+        // Example: Check if order is locked (you need a field or method to determine that)
+        // if ($order->isLocked()) {
+        //     return redirect()->back()->with('error', 'Unable to delete order. Please check the order status and try again.');
+        // }
         $order->update(['order_status' => 'deleted']);
 
-        return redirect()->back()->with('success', 'Order status changed to deleted.');
+        return redirect()->back()->with('success', 'Order deleted successfully.');
     }
 
     public function bulkDelete(Request $request)

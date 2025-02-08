@@ -1,65 +1,94 @@
 <link href="{{ asset('styles/dashboard/sidebar.css') }}" rel="stylesheet">
-
+@php
+    $adminPrivileges = json_decode(auth()->user()->adminPrivileges->privileges) ?? [];
+@endphp
 <aside id="sidebarContent">
     <div class="d-flex justify-content-center align-items-center">
         <h5 class="mb-0 menu-logo">
-            <a href="/"><img src="{{ asset('imgs/logo.png') }}" alt="Logo" width="50"></a>
+            <a href="/dashboard"><img src="{{ asset('imgs/logo.png') }}" alt="Logo" width="50"></a>
         </h5>
     </div>
     <nav>
         <div class="nav flex-column">
-            <li id="dashboard" class="nav-item">
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle nav-link" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Dashboard
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/dashboard">Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/sales">Sales Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/customer-insights">Customer Behavior Insights</a>
-                        </li>
-                        <li><a class="dropdown-item" href="/dashboard/financial-insights">Payment and Financial
-                                Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/order-fulfillment">Order Fulfillment Insights</a>
-                        </li>
-                        <li><a class="dropdown-item" href="/dashboard/custom-reports">Custom Reports</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li id="collections" class="nav-item">
-                <a class="nav-link" href="/dashboard/collections">Collections</a>
-            </li>
-            <li id="categories" class="nav-item">
-                <a class="nav-link" href="/dashboard/categories">Categories</a>
-            </li>
-            <li id="sub-categories" class="nav-item">
-                <a class="nav-link" href="/dashboard/sub-categories">Sub Categories</a>
-            </li>
-            <li id="events" class="nav-item">
-                <a class="nav-link" href="/dashboard/events">Events</a>
-            </li>
-            <li id="currencies" class="nav-item">
-                <a class="nav-link" href="/dashboard/currencies">Currencies</a>
-            </li>
-            <li id="languages" class="nav-item">
-                <a class="nav-link" href="/dashboard/languages">Languages</a>
-            </li>
-            <li id="orders" class="nav-item">
-                <a class="nav-link" href="/dashboard/orders">Orders</a>
-            </li>
-            <li id="artworks" class="nav-item">
-                <a class="nav-link" href="/dashboard/artworks">Art List</a>
-            </li>
-            <li id="sellers" class="nav-item">
-                <a class="nav-link" href="/dashboard/sellers">Seller list</a>
-            </li>
-            <li id="buyers" class="nav-item">
-                <a class="nav-link" href="/dashboard/buyers">Buyer list</a>
-            </li>
-            <li id="admins" class="nav-item">
-                <a class="nav-link" href="/dashboard/admins">Admins</a>
-            </li>
+            @if(in_array('dashboard', $adminPrivileges))
+                <li id="dashboard" class="nav-item">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle nav-link" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            {{ tt('Dashboard') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/dashboard">{{ tt('Insights') }}</a></li>
+                            <li><a class="dropdown-item" href="/dashboard/sales">{{ tt('Sales Insights') }}</a></li>
+                            <li><a class="dropdown-item"
+                                    href="/dashboard/customer-insights">{{ tt('Customer Behavior Insights') }}</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/dashboard/financial-insights">{{ tt('Payment and Financial
+                                                    Insights')}}</a></li>
+                            <li><a class="dropdown-item"
+                                    href="/dashboard/order-fulfillment">{{ tt('Order Fulfillment Insights') }}</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/dashboard/custom-reports">{{ tt('Custom Reports') }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            @endif
+            @if(in_array('collections', $adminPrivileges))
+                <li id="collections" class="nav-item">
+                    <a class="nav-link" href="/dashboard/collections">{{ tt('Collections') }}</a>
+                </li>
+            @endif
+            @if(in_array('categories', $adminPrivileges))
+                <li id="categories" class="nav-item">
+                    <a class="nav-link" href="/dashboard/categories">{{ tt('Categories') }}</a>
+                </li>
+            @endif
+            @if(in_array('subcategories', $adminPrivileges))
+                <li id="sub-categories" class="nav-item">
+                    <a class="nav-link" href="/dashboard/sub-categories">{{ tt('Sub Categories') }}</a>
+                </li>
+            @endif
+            @if(in_array('events', $adminPrivileges))
+                <li id="events" class="nav-item">
+                    <a class="nav-link" href="/dashboard/events">{{ tt('Events') }}</a>
+                </li>
+            @endif
+            @if(in_array('currencies', $adminPrivileges))
+                <li id="currencies" class="nav-item">
+                    <a class="nav-link" href="/dashboard/currencies">{{ tt('Currencies') }}</a>
+                </li>
+            @endif
+            @if(in_array('languages', $adminPrivileges))
+                <li id="languages" class="nav-item">
+                    <a class="nav-link" href="/dashboard/languages">{{ tt('Languages') }}</a>
+                </li>
+            @endif
+            @if(in_array('orders', $adminPrivileges))
+                <li id="orders" class="nav-item">
+                    <a class="nav-link" href="/dashboard/orders">{{ tt('Orders') }}</a>
+                </li>
+            @endif
+            @if(in_array('artworks', $adminPrivileges))
+                <li id="artworks" class="nav-item">
+                    <a class="nav-link" href="/dashboard/artworks">{{ tt('Art list') }}</a>
+                </li>
+            @endif
+            @if(in_array('sellers', $adminPrivileges))
+                <li id="sellers" class="nav-item">
+                    <a class="nav-link" href="/dashboard/sellers">{{ tt('Seller list') }}</a>
+                </li>
+            @endif
+            @if(in_array('buyers', $adminPrivileges))
+                <li id="buyers" class="nav-item">
+                    <a class="nav-link" href="/dashboard/buyers">{{ tt('Buyer list') }}</a>
+                </li>
+            @endif
+            @if(in_array('admins', $adminPrivileges))
+                <li id="admins" class="nav-item">
+                    <a class="nav-link" href="/dashboard/admins">{{ tt('Admins') }}</a>
+                </li>
+            @endif
         </div>
     </nav>
 </aside>
@@ -74,58 +103,85 @@
     </div>
     <div class="offcanvas-body">
         <div class="nav flex-column">
-            <li class="nav-item">
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle nav-link" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Dashboard
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/dashboard">Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/sales">Sales Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/customer-insights">Customer Behavior Insights</a>
-                        </li>
-                        <li><a class="dropdown-item" href="/dashboard/financial-insights">Payment and Financial
-                                Insights</a></li>
-                        <li><a class="dropdown-item" href="/dashboard/order-fulfillment">Order Fulfillment Insights</a>
-                        </li>
-                        <li><a class="dropdown-item" href="/dashboard/custom-reports">Custom Reports</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/dashboard/collections">Collections</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/dashboard/categories">Categories</a>
-            </li>
-            <li" class="nav-item">
-                <a class="nav-link" href="/dashboard/sub-categories">Sub Categories</a>
+            @if(in_array('dashboard', $adminPrivileges))
+                <li id="dashboard" class="nav-item">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle nav-link" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            {{ tt('Dashboard') }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/dashboard">{{ tt('Insights') }}</a></li>
+                            <li><a class="dropdown-item" href="/dashboard/sales">{{ tt('Sales Insights') }}</a></li>
+                            <li><a class="dropdown-item"
+                                    href="/dashboard/customer-insights">{{ tt('Customer Behavior Insights') }}</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/dashboard/financial-insights">{{ tt('Payment and Financial
+                                                    Insights')}}</a></li>
+                            <li><a class="dropdown-item"
+                                    href="/dashboard/order-fulfillment">{{ tt('Order Fulfillment Insights') }}</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/dashboard/custom-reports">{{ tt('Custom Reports') }}</a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/events">Events</a>
+            @endif
+            @if(in_array('collections', $adminPrivileges))
+                <li id="collections" class="nav-item">
+                    <a class="nav-link" href="/dashboard/collections">{{ tt('Collections') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/currencies">Currencies</a>
+            @endif
+            @if(in_array('categories', $adminPrivileges))
+                <li id="categories" class="nav-item">
+                    <a class="nav-link" href="/dashboard/categories">{{ tt('Categories') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/languages">Languages</a>
+            @endif
+            @if(in_array('subcategories', $adminPrivileges))
+                <li id="sub-categories" class="nav-item">
+                    <a class="nav-link" href="/dashboard/sub-categories">{{ tt('Sub Categories') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/orders">Orders</a>
+            @endif
+            @if(in_array('events', $adminPrivileges))
+                <li id="events" class="nav-item">
+                    <a class="nav-link" href="/dashboard/events">{{ tt('Events') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/artworks">Art List</a>
+            @endif
+            @if(in_array('currencies', $adminPrivileges))
+                <li id="currencies" class="nav-item">
+                    <a class="nav-link" href="/dashboard/currencies">{{ tt('Currencies') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/sellers">Seller list</a>
+            @endif
+            @if(in_array('languages', $adminPrivileges))
+                <li id="languages" class="nav-item">
+                    <a class="nav-link" href="/dashboard/languages">{{ tt('Languages') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/buyers">Buyer list</a>
+            @endif
+            @if(in_array('orders', $adminPrivileges))
+                <li id="orders" class="nav-item">
+                    <a class="nav-link" href="/dashboard/orders">{{ tt('Orders') }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/admins">Admins</a>
+            @endif
+            @if(in_array('artworks', $adminPrivileges))
+                <li id="artworks" class="nav-item">
+                    <a class="nav-link" href="/dashboard/artworks">{{ tt('Art list') }}</a>
                 </li>
+            @endif
+            @if(in_array('sellers', $adminPrivileges))
+                <li id="sellers" class="nav-item">
+                    <a class="nav-link" href="/dashboard/sellers">{{ tt('Seller list') }}</a>
+                </li>
+            @endif
+            @if(in_array('buyers', $adminPrivileges))
+                <li id="buyers" class="nav-item">
+                    <a class="nav-link" href="/dashboard/buyers">{{ tt('Buyer list') }}</a>
+                </li>
+            @endif
+            @if(in_array('admins', $adminPrivileges))
+                <li id="admins" class="nav-item">
+                    <a class="nav-link" href="/dashboard/admins">{{ tt('Admins') }}</a>
+                </li>
+            @endif
         </div>
     </div>
 </div>

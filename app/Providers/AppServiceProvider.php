@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
+use App\Models\Language;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
             return $user->is_admin === 2;
         });
 
+        // notifications
         View::composer('*', function ($view) {
             $notifications = [];
             $totalUnreadCount = 0;
@@ -63,11 +65,12 @@ class AppServiceProvider extends ServiceProvider
                     $notifications = $unreadNotifications;
                 }
             }
-
+            $allanguages = Language::all();
             // Pass data to all views
             $view->with([
                 'notifications' => $notifications,
                 'totalUnreadCount' => $totalUnreadCount,
+                'allanguages' => $allanguages
             ]);
         });
     }

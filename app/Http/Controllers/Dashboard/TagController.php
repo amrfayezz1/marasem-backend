@@ -31,6 +31,14 @@ class TagController extends Controller
         return view('dashboard.tags.index', compact('tags', 'categories', 'languages'));
     }
 
+    public function toggleStatus($id)
+    {
+        $tag = Tag::findOrFail($id);
+        $tag->status = $tag->status === 'published' ? 'hidden' : 'published';
+        $tag->save();
+        return response()->json(['success' => true, 'status' => $tag->status]);
+    }
+
     public function show($id)
     {
         $tag = Tag::with(['translations', 'category', 'translations.language'])->findOrFail($id);
@@ -44,30 +52,46 @@ class TagController extends Controller
             'translations' => 'required|array',
             'translations.*.language_id' => 'required|exists:languages,id',
             'translations.*.name' => 'required|string|max:50',
+            'translations.*.description' => 'required|string', // required description in each language
             'status' => 'required|in:published,hidden',
-            // 'meta_keyword' => 'required|string',
-            // 'url' => 'required|string|unique:tags,url',
-            // 'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'meta_keyword' => 'required|string',
+            'url' => 'required|string|unique:tags,url',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // $imagePath = $request->file('image')->store('tags', 'public');
+        // Handle image upload:
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $path = $file->store('tags', 'public');
+            $imagePath = asset('storage/' . $path);
+        } else {
+            $imagePath = null;
+        }
 
-        // get the english language translation
-        $englishTranslation = collect($request->translations)->where('language_id', 1)->first();
+        // Get the default translation (assuming language_id = 1 is English)
+        $defaultTranslation = collect($request->translations)->firstWhere('language_id', 1);
+        if (!$defaultTranslation) {
+            return redirect()->back()->with('error', 'Default language translation is required.');
+        }
+
+        // Create the tag (subcategory) record using the default translation's name and description as the common values
         $tag = Tag::create([
-            'name' => $englishTranslation['name'],
+            'name' => $defaultTranslation['name'],
+            'description' => $defaultTranslation['description'],
             'category_id' => $request->category_id,
             'status' => $request->status,
-            // 'meta_keyword' => $request->meta_keyword,
-            // 'url' => $request->url,
-            // 'image' => $imagePath
+            'meta_keyword' => $request->meta_keyword,
+            'url' => $request->url,
+            'image' => $imagePath
         ]);
 
+        // Create translations for each language
         foreach ($request->translations as $translation) {
             TagTranslation::create([
                 'tag_id' => $tag->id,
                 'language_id' => $translation['language_id'],
                 'name' => $translation['name'],
+                'description' => $translation['description']
             ]);
         }
 
@@ -83,29 +107,44 @@ class TagController extends Controller
             'translations' => 'required|array',
             'translations.*.language_id' => 'required|exists:languages,id',
             'translations.*.name' => 'required|string|max:50',
+            'translations.*.description' => 'required|string',
             'status' => 'required|in:published,hidden',
-            // 'meta_keyword' => 'required|string',
-            // 'url' => 'required|string|unique:tags,url,' . $tag->id,
-            // 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'meta_keyword' => 'required|string',
+            'url' => 'required|string|unique:tags,url,' . $tag->id,
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // if ($request->hasFile('image')) {
-        //     $imagePath = $request->file('image')->store('tags', 'public');
-        //     $tag->update(['image' => $imagePath]);
-        // }
-        $englishTranslation = collect($request->translations)->where('language_id', 1)->first();
+        // Handle image upload: if a new file is provided, update; otherwise retain current image.
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $path = $file->store('tags', 'public');
+            $imagePath = asset('storage/' . $path);
+        } else {
+            $imagePath = $tag->image;
+        }
+
+        // Get the default translation (language_id = 1)
+        $defaultTranslation = collect($request->translations)->firstWhere('language_id', 1);
+        if (!$defaultTranslation) {
+            return redirect()->back()->with('error', 'Default language translation is required.');
+        }
+
+        // Update the tag record
         $tag->update([
-            'name' => $englishTranslation['name'],
+            'name' => $defaultTranslation['name'],
+            'description' => $defaultTranslation['description'],
             'category_id' => $request->category_id,
             'status' => $request->status,
-            // 'meta_keyword' => $request->meta_keyword,
-            // 'url' => $request->url,
+            'meta_keyword' => $request->meta_keyword,
+            'url' => $request->url,
+            'image' => $imagePath
         ]);
 
+        // Update or create translations
         foreach ($request->translations as $translation) {
             TagTranslation::updateOrCreate(
                 ['tag_id' => $tag->id, 'language_id' => $translation['language_id']],
-                ['name' => $translation['name']]
+                ['name' => $translation['name'], 'description' => $translation['description']]
             );
         }
 

@@ -219,4 +219,14 @@ class SellerController extends Controller
 
         return redirect()->back()->with('success', 'Selected sellers updated successfully.');
     }
+
+    public function toggleStatus($id)
+    {
+        $artistDetail = ArtistDetail::where('user_id', $id)->firstOrFail();
+        // Toggle status: for example, if currently pending, change to approved, or vice versa
+        $artistDetail->status = $artistDetail->status === 'approved' ? 'pending' : 'approved';
+        $artistDetail->save();
+        return response()->json(['success' => true, 'status' => $artistDetail->status]);
+    }
+
 }

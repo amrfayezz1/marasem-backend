@@ -9,7 +9,15 @@ class Tag extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'category_id', 'status'];
+    protected $fillable = [
+        'name',
+        'category_id',
+        'status',
+        'description',
+        'meta_keyword',
+        'url',
+        'image'
+    ];
 
     public function translations()
     {

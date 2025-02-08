@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta property="og:image" content="{{ asset("imgs/logo.png") }}" />
 
-    <title>@yield('title', 'Marasem | Dashboard')</title>
+    <title>@yield('title', tt('Marasem') . ' | ' . tt('Dashboard'))</title>
     <link rel="shortcut icon" href="{{ asset("imgs/logo.png") }}">
     <!-- Default CSS -->
     <div>
@@ -56,6 +56,23 @@
     <link href="{{ asset('styles/root.css') }}" rel="stylesheet">
     <link href="{{ asset('styles/dashboard/app.css') }}" rel="stylesheet">
     @yield('css')
+    <link href="{{ asset('styles/dashboard/bookings.css') }}" rel="stylesheet">
+    <link href="{{ asset('styles/dashboard/coupons.css') }}" rel="stylesheet">
+    @if (auth()->user()->language->code == 'ar')
+        <style>
+            html {
+                direction: rtl;
+            }
+
+            .navbar-nav .dropdown-menu {
+                right: -50px;
+            }
+
+            .notify .dropdown-menu {
+                right: -150px;
+            }
+        </style>
+    @endif
 </head>
 
 <body>
@@ -64,7 +81,7 @@
     </form>
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
+            {{ tt(session('error')) }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -74,7 +91,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             <ul>
                 @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                    <li>{{ tt($error) }}</li>
                 @endforeach
             </ul>
         </div>
@@ -82,7 +99,7 @@
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+            {{ tt(session('success')) }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php    session()->forget('success'); ?>
@@ -130,7 +147,108 @@
         <!-- select2 -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     </div>
+    <!-- validation -->
+    <script>
+        $(document).ready(function () {
+            // Loop through all forms and disable native validation
+            $("form").each(function () {
+                $(this).attr("novalidate", "novalidate");
+            });
+            $("form").on("submit", function (e) {
+                var $form = $(this);
+                var missingFields = [];
+                // Loop through all required fields inside this form
+                $form.find("input[required], textarea[required], select[required]").each(function () {
+                    var $field = $(this);
+                    // Check if the field value is empty after trimming whitespace
+                    if ($.trim($field.val()) === "") {
+                        // Identify the field by its name or id, or fallback to a generic label
+                        var identifier = $field.attr("name") || $field.attr("id") || "a required field";
+                        missingFields.push(identifier);
+                    }
+                });
+                // If any required fields are missing, prevent form submission and alert the user
+                if (missingFields.length > 0) {
+                    e.preventDefault();
+                    alert("Please fill out the following required fields: " + missingFields.join(", "));
+                }
+            });
+        });
+
+        // select2
+        $('select').each(function () {
+            $(this).select2({
+                placeholder: $(this).data('placeholder') || 'Select an option',
+                // allowClear: true,
+                minimumResultsForSearch: 0  // Forces the search box to always be visible
+            });
+        });
+    </script>
     @yield('scripts')
+    <!-- language -->
+    <script>
+        function updateLang() {
+            // Get the selected locale value from the select element
+            let locale = document.querySelector('[name=locale]').value;
+            $.ajax({
+                url: '{{ route('dashboard.change.language') }}',
+                type: 'POST',
+                data: {
+                    locale: locale,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (response) {
+                    // On success, reload the page
+                    location.reload();
+                },
+                error: function (xhr) {
+                    // On error, show a Bootstrap toast for 3 seconds
+                    showToast("{{ tt('Failed to update locale.') }}", 'danger', 3000);
+                }
+            });
+        }
+
+        // Function to display a Bootstrap toast message
+        function showToast(message, type = 'success', duration = 3000) {
+            // Create a toast element if one doesn't already exist
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(toastContainer);
+            }
+
+            // Create the toast element
+            let toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            toastEl.style.minWidth = '250px';
+
+            // Build toast inner HTML
+            toastEl.innerHTML = `
+                                    <div class="d-flex">
+                                        <div class="toast-body">${message}</div>
+                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                    </div>
+                                `;
+
+            // Append the toast to the container
+            toastContainer.appendChild(toastEl);
+
+            // Initialize and show the toast using Bootstrap's JS API
+            let toast = new bootstrap.Toast(toastEl, { delay: duration });
+            toast.show();
+
+            // Remove the toast element from the DOM after it hides
+            toastEl.addEventListener('hidden.bs.toast', function () {
+                toastEl.remove();
+            });
+        }
+
+    </script>
 </body>
 
 </html>

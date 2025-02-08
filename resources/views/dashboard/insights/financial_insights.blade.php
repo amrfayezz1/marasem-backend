@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container dashboard">
-    <h3>Payment and Financial Insights</h3>
+    <h3>{{ tt('Payment and Financial Insights') }}</h3>
     <hr>
 
     <!-- Date Range Filter -->
@@ -10,18 +10,18 @@
         <div class="d-flex justify-content-between flex-wrap gap-4">
             <div class="row col-md-8">
                 <div class="col-md-4">
-                    <label>Start Date:</label>
-                    <input type="date" name="start_date" value="{{ request('start_date', Date($startDate)) }}" required
-                        class="form-control">
+                    <label>{{ tt('Start Date:') }}</label>
+                    <input type="date" name="start_date"
+                        value="{{ request('start_date', $startDate->format('Y-m-d')) }}" required class="form-control">
                 </div>
                 <div class="col-md-4">
-                    <label>End Date:</label>
-                    <input type="date" name="end_date" value="{{ request('end_date', Date($endDate)) }}" required
-                        class="form-control">
+                    <label>{{ tt('End Date:') }}</label>
+                    <input type="date" name="end_date" value="{{ request('end_date', $endDate->format('Y-m-d')) }}"
+                        required class="form-control">
                 </div>
             </div>
             <div class="col-md-1 d-flex align-items-end justify-self-end">
-                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <button type="submit" class="btn btn-primary w-100">{{ tt('Filter') }}</button>
             </div>
         </div>
     </form>
@@ -31,7 +31,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Payments by Method</h5>
+                    <h5 class="card-title">{{ tt('Payments by Method') }}</h5>
                     <canvas id="paymentsByMethodChart"></canvas>
                 </div>
             </div>
@@ -41,13 +41,13 @@
         <div class="col-md-6">
             <div class="card shadow-sm text-center">
                 <div class="card-body">
-                    <h5 class="card-title">Total Pending Payments</h5>
+                    <h5 class="card-title">{{ tt('Total Pending Payments') }}</h5>
                     <h2>${{ number_format($pendingPayments, 2) }}</h2>
                 </div>
             </div>
             <div class="card shadow-sm text-center mt-3">
                 <div class="card-body">
-                    <h5 class="card-title">Total Refunds</h5>
+                    <h5 class="card-title">{{ tt('Total Refunds') }}</h5>
                     <h2>${{ number_format($totalRefunds, 2) }}</h2>
                 </div>
             </div>
@@ -59,7 +59,7 @@
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Revenue Trends by Payment Method</h5>
+                    <h5 class="card-title">{{ tt('Revenue Trends by Payment Method') }}</h5>
                     <canvas id="revenueTrendsChart"></canvas>
                 </div>
             </div>

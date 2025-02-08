@@ -34,9 +34,9 @@ class DashboardController extends Controller
         $top_sellers = User::where('is_artist', true)
             ->join('artworks', 'users.id', '=', 'artworks.artist_id')
             ->join('order_items', 'artworks.id', '=', 'order_items.artwork_id')
-            ->select('users.id', 'users.first_name', 'users.last_name', DB::raw('COUNT(order_items.id) as total_sales'))
+            ->select('users.first_name', 'users.last_name', DB::raw('SUM(order_items.price * order_items.quantity) as revenue'))
             ->groupBy('users.id', 'users.first_name', 'users.last_name')
-            ->orderByDesc('total_sales')
+            ->orderByDesc('revenue')
             ->take(10)
             ->get();
 

@@ -7,9 +7,9 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Languages</h3>
+        <h3>{{ tt('Languages') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addLanguageModal" class="btn btn-primary">
-            Create &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Create') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
@@ -19,33 +19,33 @@
         <form method="GET" action="{{ route('dashboard.languages.index') }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']))
-                    <a href="{{ route('dashboard.languages.index') }}" class="btn btn-secondary me-0">Reset</a>
+                    <a href="{{ route('dashboard.languages.index') }}" class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
                 <input type="text" name="search" class="form-control" aria-label="Search..."
-                    placeholder="Search by Code or Name..." value="{{ request('search', '') }}">
-                <button type="submit" class="btn btn-primary">Search</button>
+                    placeholder="{{ tt('Search by Code or Name...') }}" value="{{ request('search', '') }}">
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Languages Table -->
     @if ($languages->isEmpty())
-        <center class="alert alert-warning">No languages found.</center>
+        <center class="alert alert-warning">{{ tt('No languages found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>{{ tt('Code') }}</th>
+                    <th>{{ tt('Name') }}</th>
+                    <th>{{ tt('Status') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($languages as $language)
                     <tr>
                         <td>{{ $language->code }}</td>
-                        <td>{{ $language->name }}</td>
+                        <td>{{ tt($language->name) }}</td>
                         <td>
                             <form method="POST" action="{{ route('dashboard.languages.update', $language->id) }}"
                                 class="d-inline">
@@ -54,7 +54,7 @@
                                 <input type="hidden" name="status" value="{{ $language->status ? 0 : 1 }}">
                                 <button type="submit"
                                     class="btn btn-sm {{ $language->status ? 'btn-success' : 'btn-secondary' }}">
-                                    {{ $language->status ? 'Active' : 'Inactive' }}
+                                    {{ $language->status ? tt('Active') : tt('Inactive') }}
                                 </button>
                             </form>
                         </td>
@@ -77,7 +77,34 @@
             </tbody>
         </table>
 
-        {{ $languages->links() }}
+
+        @if ($languages->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$languages->onFirstPage())
+                        <a href="{{ $languages->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $languages->lastPage(); $i++)
+                        <a href="{{ $languages->url($i) }}">
+                            <li class="page-item {{ $i == $languages->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($languages->hasMorePages())
+                        <a href="{{ $languages->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
     @endif
 </div>
 
@@ -88,24 +115,24 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Language</h5>
+                    <h5 class="modal-title">{{ tt('Add Language') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Language Code:</label>
+                    <label>{{ tt('Language Code:') }}</label>
                     <input type="text" name="code" class="form-control" required maxlength="5">
 
-                    <label class="mt-2">Name:</label>
+                    <label class="mt-2">{{ tt('Name:') }}</label>
                     <input type="text" name="name" class="form-control" required maxlength="50">
 
-                    <label class="mt-2">Status:</label>
+                    <label class="mt-2">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
+                        <option value="1">{{ tt('Active') }}</option>
+                        <option value="0">{{ tt('Inactive') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -120,24 +147,24 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Language</h5>
+                    <h5 class="modal-title">{{ tt('Edit Language') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Language Code:</label>
+                    <label>{{ tt('Language Code:') }}</label>
                     <input type="text" name="code" class="form-control" required maxlength="5">
 
-                    <label class="mt-2">Name:</label>
+                    <label class="mt-2">{{ tt('Name:') }}</label>
                     <input type="text" name="name" class="form-control" required maxlength="50">
 
-                    <label class="mt-2">Status:</label>
+                    <label class="mt-2">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
+                        <option value="1">{{ tt('Active') }}</option>
+                        <option value="0">{{ tt('Inactive') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -161,14 +188,14 @@
                 $('#editLanguageModal').modal('show');
             },
             error: function () {
-                alert('Failed to load language details.');
+                alert('{{ tt('Failed to load language details.') }}');
             }
         });
     }
 
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to delete this language? This action cannot be undone.")) {
+        if (confirm("{{ tt('Are you sure you want to delete this language? This action cannot be undone.') }}")) {
             event.target.closest('form').submit();
         }
     }

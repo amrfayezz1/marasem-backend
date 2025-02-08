@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->hasOne(ArtistDetail::class);
     }
 
+    public function language()
+    {
+        return $this->hasOne(Language::class, 'id', 'preferred_language');
+    }
+
     public function artworks()
     {
         return $this->hasMany(Artwork::class, 'artist_id');

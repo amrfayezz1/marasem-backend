@@ -33,6 +33,15 @@ class EventController extends Controller
             'location_url' => 'nullable|url',
             'cover_img' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'status' => 'required|in:upcoming,ended',
+        ], [
+            'date_start.required' => 'This field is required.',
+            'date_end.required' => 'This field is required.',
+            'time_start.required' => 'This field is required.',
+            'time_end.required' => 'This field is required.',
+            'cover_img.required' => 'This field is required.',
+            'cover_img.image' => 'Invalid file type or size. Please upload a valid image.',
+            'cover_img.mimes' => 'Invalid file type or size. Please upload a valid image.',
+            'cover_img.max' => 'Invalid file type or size. Please upload a valid image.',
         ]);
 
         $imagePath = $request->file('cover_img')->store('events', 'public');
@@ -85,8 +94,17 @@ class EventController extends Controller
             'time_start' => 'required',
             'time_end' => 'required',
             'location_url' => 'nullable|url',
-            'cover_img' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'cover_img' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'status' => 'required|in:upcoming,ended',
+        ], [
+            'date_start.required' => 'This field is required.',
+            'date_end.required' => 'This field is required.',
+            'time_start.required' => 'This field is required.',
+            'time_end.required' => 'This field is required.',
+            'cover_img.required' => 'This field is required.',
+            'cover_img.image' => 'Invalid file type or size. Please upload a valid image.',
+            'cover_img.mimes' => 'Invalid file type or size. Please upload a valid image.',
+            'cover_img.max' => 'Invalid file type or size. Please upload a valid image.',
         ]);
 
         if ($request->hasFile('cover_img')) {
@@ -155,15 +173,13 @@ class EventController extends Controller
 
     public function bulkUnpublish(Request $request)
     {
-        \Log::info($request->all());
         $ids = json_decode($request->input('ids', []));
-
         if (empty($ids)) {
             return redirect()->back()->with('error', 'No events selected for unpublishing.');
         }
-
-        Event::whereIn('id', $ids)->update(['status' => 'unpublished']);
-
+        // Set status to "ended" instead of "unpublished"
+        Event::whereIn('id', $ids)->update(['status' => 'ended']);
         return redirect()->back()->with('success', 'Selected events unpublished successfully.');
     }
+
 }

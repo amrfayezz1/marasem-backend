@@ -7,9 +7,9 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Seller List</h3>
+        <h3>{{ tt('Seller List') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addSellerModal" class="btn btn-primary">
-            Add Seller &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Add Seller') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
@@ -19,37 +19,40 @@
         <form method="GET" action="{{ route('dashboard.sellers.index') }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']) || isset($_GET['status']))
-                    <a href="{{ route('dashboard.sellers.index') }}" class="btn btn-secondary me-0">Reset</a>
+                    <a href="{{ route('dashboard.sellers.index') }}" class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
-                <input type="text" name="search" class="form-control" placeholder="Search by Name or ID"
+                <input type="text" name="search" class="form-control" placeholder="{{ tt('Search by Name or ID') }}"
                     value="{{ request('search', '') }}">
 
                 <select name="status" class="form-select">
-                    <option value="all">All Statuses</option>
-                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="all">{{ tt('All Statuses') }}</option>
+                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>{{ tt('Approved') }}
+                    </option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>{{ tt('Pending') }}
+                    </option>
+                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>{{ tt('Rejected') }}
+                    </option>
                 </select>
 
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Seller Table -->
     @if ($sellers->isEmpty())
-        <center class="alert alert-warning">No sellers found.</center>
+        <center class="alert alert-warning">{{ tt('No sellers found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th class="select"><input type="checkbox" id="selectAll"> Select</th>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Profile Picture</th>
-                    <th>Registration Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th class="select"><input type="checkbox" id="selectAll"> {{ tt('Select') }}</th>
+                    <th>{{ tt('ID') }}</th>
+                    <th>{{ tt('Name') }}</th>
+                    <th>{{ tt('Profile Picture') }}</th>
+                    <th>{{ tt('Registration Date') }}</th>
+                    <th>{{ tt('Status') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,7 +66,7 @@
                                 <img src="{{ asset('storage/' . $seller->profile_picture) }}" width="50" height="50"
                                     class="rounded">
                             @else
-                                <span>N/A</span>
+                                <span>{{ tt('N/A') }}</span>
                             @endif
                         </td>
                         <td>{{ $seller->created_at->format('Y-m-d') }}</td>
@@ -74,6 +77,7 @@
                             </span>
                         </td>
                         <td>
+                            <span onclick="viewSeller({{ $seller->id }})"><i class="fa-solid fa-eye"></i></span>
                             <span onclick="editSeller({{ $seller->id }})"><i class="fa-solid fa-pen-to-square"></i></span>
                             <form action="{{ route('dashboard.sellers.destroy', $seller->id) }}" method="POST" class="d-inline">
                                 @csrf
@@ -86,14 +90,41 @@
             </tbody>
         </table>
 
-        {{ $sellers->links() }}
+        
+        @if ($sellers->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$sellers->onFirstPage())
+                        <a href="{{ $sellers->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $sellers->lastPage(); $i++)
+                        <a href="{{ $sellers->url($i) }}">
+                            <li class="page-item {{ $i == $sellers->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($sellers->hasMorePages())
+                        <a href="{{ $sellers->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
 
         <!-- Bulk Actions -->
         <div class="bulks mt-3">
             <form method="POST" action="{{ route('dashboard.sellers.bulk-delete') }}" id="bulkDeleteForm">
                 @csrf
                 <input type="hidden" name="ids" id="bulkDeleteIds">
-                <button type="submit" class="btn btn-danger">Delete Selected</button>
+                <button type="submit" class="btn btn-danger">{{ tt('Delete Selected') }}</button>
             </form>
 
             <form method="POST" action="{{ route('dashboard.sellers.bulk-update-status') }}" class="d-inline"
@@ -101,12 +132,12 @@
                 @csrf
                 <div class="input-group">
                     <select name="status" class="form-select w-auto">
-                        <option value="approved">Approve</option>
-                        <option value="pending">Mark as Pending</option>
-                        <option value="rejected">Reject</option>
+                        <option value="approved">{{ tt('Approve') }}</option>
+                        <option value="pending">{{ tt('Mark as Pending') }}</option>
+                        <option value="rejected">{{ tt('Reject') }}</option>
                     </select>
                     <input type="hidden" name="ids" id="bulkUpdateStatusIds">
-                    <button type="submit" class="btn btn-primary">Update Status</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Update Status') }}</button>
                 </div>
             </form>
         </div>
@@ -120,7 +151,7 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Seller</h5>
+                    <h5 class="modal-title">{{ tt('Add Seller') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -130,7 +161,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -141,40 +172,41 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="lang-{{ $language->id }}">
-                                <input type="hidden" name="translations[{{ $language->id }}][language_id]" value="{{ $language->id }}">
-                                <label>First Name:</label>
-                                <input type="text" name="translations[{{ $language->id }}][first_name]" class="form-control lang-fname"
-                                    required>
+                                <input type="hidden" name="translations[{{ $language->id }}][language_id]"
+                                    value="{{ $language->id }}">
+                                <label>{{ tt('First Name') }}:</label>
+                                <input type="text" name="translations[{{ $language->id }}][first_name]"
+                                    class="form-control lang-fname" required>
 
-                                <label class="mt-2">Last Name:</label>
-                                <input type="text" name="translations[{{ $language->id }}][last_name]" class="form-control lang-lname"
-                                    required>
+                                <label class="mt-2">{{ tt('Last Name') }}:</label>
+                                <input type="text" name="translations[{{ $language->id }}][last_name]"
+                                    class="form-control lang-lname" required>
                             </div>
                         @endforeach
                     </div>
 
                     <!-- Other Fields -->
-                    <label class="mt-2">Email:</label>
+                    <label class="mt-2">{{ tt('Email') }}:</label>
                     <input type="email" name="email" class="form-control" required>
 
-                    <label class="mt-2">Country Code:</label>
+                    <label class="mt-2">{{ tt('Country Code') }}:</label>
                     <input type="text" name="country_code" class="form-control" value="+20" required>
 
-                    <label class="mt-2">Phone:</label>
+                    <label class="mt-2">{{ tt('Phone') }}:</label>
                     <input type="text" name="phone" class="form-control" required>
 
-                    <label class="mt-2">Profile Picture:</label>
+                    <label class="mt-2">{{ tt('Profile Picture') }}:</label>
                     <input type="file" name="profile_picture" class="form-control">
 
-                    <label class="mt-2">Status:</label>
+                    <label class="mt-2">{{ tt('Status') }}:</label>
                     <select name="status" class="form-control">
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="pending">{{ tt('Pending') }}</option>
+                        <option value="approved">{{ tt('Approved') }}</option>
+                        <option value="rejected">{{ tt('Rejected') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -189,7 +221,7 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Seller</h5>
+                    <h5 class="modal-title">{{ tt('Edit Seller') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -199,7 +231,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#edit-lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -210,12 +242,13 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="edit-lang-{{ $language->id }}">
-                                <input type="hidden" name="translations[{{ $language->id }}][language_id]" value="{{ $language->id }}">
-                                <label>First Name:</label>
+                                <input type="hidden" name="translations[{{ $language->id }}][language_id]"
+                                    value="{{ $language->id }}">
+                                <label>{{ tt('First Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][first_name]"
                                     class="form-control def_name">
 
-                                <label class="mt-2">Last Name:</label>
+                                <label class="mt-2">{{ tt('Last Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][last_name]"
                                     class="form-control def_last_name">
                             </div>
@@ -223,30 +256,45 @@
                     </div>
 
                     <!-- Other Fields -->
-                    <label class="mt-2">Email:</label>
+                    <label class="mt-2">{{ tt('Email') }}:</label>
                     <input type="email" name="email" class="form-control">
 
-                    <label class="mt-2">Country Code:</label>
+                    <label class="mt-2">{{ tt('Country Code') }}:</label>
                     <input type="text" name="country_code" class="form-control">
 
-                    <label class="mt-2">Phone:</label>
+                    <label class="mt-2">{{ tt('Phone') }}:</label>
                     <input type="text" name="phone" class="form-control">
 
-                    <label class="mt-2">Profile Picture:</label>
+                    <label class="mt-2">{{ tt('Profile Picture') }}:</label>
                     <input type="file" name="profile_picture" class="form-control">
 
-                    <label class="mt-2">Status:</label>
+                    <label class="mt-2">{{ tt('Status') }}:</label>
                     <select name="status" class="form-control">
-                        <option value="approved">Approved</option>
-                        <option value="pending">Pending</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="approved">{{ tt('Approved') }}</option>
+                        <option value="pending">{{ tt('Pending') }}</option>
+                        <option value="rejected">{{ tt('Rejected') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Preview Seller Modal -->
+<div class="modal fade" id="previewSellerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ tt('Seller Details') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Loading...
+            </div>
+        </div>
     </div>
 </div>
 
@@ -257,7 +305,7 @@
 <script>
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to delete this seller? This action cannot be undone.")) {
+        if (confirm("{{ tt('Are you sure you want to delete this seller? This action cannot be undone.') }}")) {
             event.target.closest('form').submit();
         }
     }
@@ -271,7 +319,7 @@
         const selectedIds = Array.from(document.querySelectorAll('input[name="seller_ids[]"]:checked'))
             .map(cb => cb.value);
         if (selectedIds.length === 0) {
-            alert('Select at least one seller to delete.');
+            alert('{{ tt('Select at least one seller to delete.') }}');
             return;
         }
         document.getElementById('bulkDeleteIds').value = JSON.stringify(selectedIds);
@@ -283,7 +331,7 @@
         const selectedIds = Array.from(document.querySelectorAll('input[name="seller_ids[]"]:checked'))
             .map(cb => cb.value);
         if (selectedIds.length === 0) {
-            alert('Select at least one seller to update.');
+            alert('{{ tt('Select at least one seller to update.') }}');
             return;
         }
         document.getElementById('bulkUpdateStatusIds').value = JSON.stringify(selectedIds);
@@ -323,6 +371,49 @@
             },
             error: function () {
                 alert('Failed to load seller details.');
+            }
+        });
+    }
+</script>
+<!-- view -->
+<script>
+    function viewSeller(sellerId) {
+        $.ajax({
+            url: `/dashboard/sellers/${sellerId}`,
+            type: 'GET',
+            success: function (response) {
+                let seller = response.seller;
+                // Build HTML with seller details
+                let detailsHtml = `
+                <h5>${seller.first_name} ${seller.last_name}</h5>
+                <p><strong>{{ tt('Email') }}:</strong> ${seller.email}</p>
+                <p><strong>{{ tt('Phone') }}:</strong> ${seller.phone}</p>
+                <p><strong>{{ tt('Registration Date') }}:</strong> ${seller.created_at.substring(0, 10)}</p>
+                <p><strong>{{ tt('Status') }}:</strong> <span id="sellerStatus">${seller.artist_details.status}</span></p>
+                <button onclick="toggleSellerStatus(${seller.id})" class="btn btn-secondary">{{ tt('Toggle Status') }}</button>
+            `;
+                $('#previewSellerModal .modal-body').html(detailsHtml);
+                $('#previewSellerModal').modal('show');
+            },
+            error: function () {
+                alert('Failed to load seller details.');
+            }
+        });
+    }
+
+    function toggleSellerStatus(sellerId) {
+        $.ajax({
+            url: `/dashboard/sellers/${sellerId}/toggle-status`,
+            type: 'POST',
+            data: { _token: '{{ csrf_token() }}' },
+            success: function (response) {
+                if (response.success) {
+                    alert('{{ tt('Seller status updated successfully.') }}');
+                    viewSeller(sellerId); // Refresh preview
+                }
+            },
+            error: function () {
+                alert('{{ tt('Failed to update seller status. Please try again.') }}');
             }
         });
     }

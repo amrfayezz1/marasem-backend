@@ -8,31 +8,34 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Categories</h3>
+        <h3>{{ tt('Categories') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addCategoryModal" class="btn btn-primary">
-            Create &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Create') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
 
     <div class="d-flex justify-content-end seperate">
         <!-- Search Bar -->
-        <form method="GET" action="{{ route('dashboard.categories.index') }}" class="mb-3">
-            <div class="input-group">
-                @if (isset($_GET['search']) || isset($_GET['filter']))
-                    <a href="{{ route('dashboard.categories.index') }}" class="btn btn-secondary me-0">Reset</a>
-                @endif
-                <input type="text" name="search" class="form-control" aria-label="Search..." placeholder="Search..."
-                    required style="flex: 3;" value="{{ isset($_GET['search']) ? $_GET['search'] : '' }}">
-                <select name="filter" class="form-select me-2" required>
-                    <option value="id" {{ isset($_GET['filter']) && $_GET['filter'] == 'id' ? 'selected' : '' }}>ID
+        <form method="GET" action="{{ route('dashboard.categories.index') }}" class="mb-3 d-flex align-items-center">
+            <div class="input-group" style="flex: 1;">
+                <input type="text" name="search" class="form-control" placeholder="{{ tt('Search...') }}" required
+                    value="{{ request('search', '') }}">
+                <select name="filter" class="form-select">
+                    <option value="id" {{ request('filter') == 'id' ? 'selected' : '' }}>{{ tt('ID') }}</option>
+                    <option value="name" {{ request('filter') == 'name' ? 'selected' : '' }}>{{ tt('Name') }}</option>
+                    <option value="status" {{ request('filter') == 'status' ? 'selected' : '' }}>{{ tt('Status') }}
                     </option>
-                    <option value="name" {{ isset($_GET['filter']) && $_GET['filter'] == 'name' ? 'selected' : '' }}>
-                        Name
-                    </option>
-                    <option value="status" {{ isset($_GET['filter']) && $_GET['filter'] == 'status' ? 'selected' : '' }}>
-                        Status
-                    </option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary ms-2">{{ tt('Apply Filter') }}</button>
+            <a href="{{ route('dashboard.categories.index') }}"
+                class="btn btn-secondary ms-2">{{ tt('Clear Filter') }}</a>
+            <div class="ms-2">
+                <select name="rows" class="form-select" onchange="this.form.submit()">
+                    <option value="10" {{ request('rows', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('rows') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('rows') == 50 ? 'selected' : '' }}>50</option>
                 </select>
             </div>
         </form>
@@ -40,16 +43,18 @@
 
     <!-- Categories Table -->
     @if ($categories->isEmpty())
-        <center class="alert alert-warning">No categories found.</center>
+        <center class="alert alert-warning">{{ tt('No categories found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th class="select"><input type="checkbox" id="selectAll"> Select</th>
-                    <th>ID</th>
-                    <th>Category Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th class="select"><input type="checkbox" id="selectAll"> {{ tt('Select') }}</th>
+                    <th>{{ tt('ID') }}</th>
+                    <th>{{ tt('Category Name') }}</th>
+                    <th>{{ tt('Subcategory') }}</th>
+                    <th>{{ tt('Artworks Count') }}</th>
+                    <th>{{ tt('Status') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,6 +63,16 @@
                         <td><input type="checkbox" name="category_ids[]" value="{{ $category->id }}"></td>
                         <td>{{ $category->id }}</td>
                         <td>{{ $category->name }}</td>
+                        <td>
+                            @if($category->tags && $category->tags->isNotEmpty())
+                                @foreach($category->tags as $tag)
+                                    <span class="badge bg-info">{{ $tag->name }}</span>
+                                @endforeach
+                            @else
+                                <em>{{ tt('N/A') }}</em>
+                            @endif
+                        </td>
+                        <td>{{ $category->artworks_count }}</td>
                         <td>
                             <span class="badge {{ $category->status == 'active' ? 'bg-warning' : 'bg-danger' }}">
                                 {{ ucfirst($category->status) }}
@@ -78,13 +93,40 @@
             </tbody>
         </table>
 
-        {{ $categories->links() }}
+
+        @if ($categories->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$categories->onFirstPage())
+                        <a href="{{ $categories->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $categories->lastPage(); $i++)
+                        <a href="{{ $categories->url($i) }}">
+                            <li class="page-item {{ $i == $categories->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($categories->hasMorePages())
+                        <a href="{{ $categories->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
 
         <!-- Bulk Delete Button -->
         <form method="POST" action="{{ route('dashboard.categories.bulk-delete') }}" id="bulkDeleteForm">
             @csrf
             <input type="hidden" name="ids" id="bulkDeleteIds">
-            <button type="submit" class="btn btn-danger mt-3">Delete Selected</button>
+            <button type="submit" class="btn btn-danger mt-3">{{ tt('Delete Selected') }}</button>
         </form>
     @endif
 </div>
@@ -92,11 +134,11 @@
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="{{ route('dashboard.categories.store') }}">
+        <form method="POST" action="{{ route('dashboard.categories.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Category</h5>
+                    <h5 class="modal-title">{{ tt('Add Category') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -106,7 +148,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -117,24 +159,51 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="lang-{{ $language->id }}">
-                                <label class="mt-2">Category Name:</label>
-                                <input type="text" name="translations[{{ $loop->index }}][name]" class="form-control"
+                                <label class="mt-2">{{ tt('Category Name:') }}</label>
+                                <input type="text" name="translations[{{ $language->id }}][name]" class="form-control"
                                     required>
-                                <input type="hidden" name="translations[{{ $loop->index }}][language_id]"
+                                <input type="hidden" name="translations[{{ $language->id }}][language_id]"
                                     value="{{ $language->id }}">
+                                <label class="mt-2">{{ tt('Description:') }}</label>
+                                <textarea name="translations[{{ $language->id }}][description]" class="form-control"
+                                    maxlength="200"></textarea>
                             </div>
                         @endforeach
                     </div>
 
+                    <!-- Artworks Selection -->
+                    <label class="mt-2">{{ tt('Artworks:') }}</label>
+                    <select name="artworks[]" class="form-control select2-artwork" multiple>
+                        @foreach($artworks as $artwork)
+                            <option value="{{ $artwork->id }} "
+                                data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
+                                data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
+                                {{ $artwork->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <!-- Common Fields -->
+                    <div class="mt-3">
+                        <label>{{ tt('Meta Keyword:') }}</label>
+                        <input type="text" name="meta_keyword" class="form-control" required>
+
+                        <label class="mt-2">{{ tt('URL:') }}</label>
+                        <input type="text" name="url" class="form-control" required>
+
+                        <label class="mt-2">{{ tt('Category Picture:') }}</label>
+                        <input type="file" name="picture" class="form-control" required>
+                    </div>
+
                     <!-- Status Selection (Outside Tabs) -->
-                    <label class="mt-3">Status:</label>
+                    <label class="mt-3">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active">{{ tt('Active') }}</option>
+                        <option value="inactive">{{ tt('Inactive') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -144,12 +213,12 @@
 <!-- Edit Category Modal -->
 <div class="modal fade" id="editCategoryModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST">
+        <form method="POST" action="" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Category</h5>
+                    <h5 class="modal-title">{{ tt('Edit Category') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -159,7 +228,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#edit-lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -170,24 +239,51 @@
                         @foreach($languages as $language)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
                                 id="edit-lang-{{ $language->id }}">
-                                <label class="mt-2">Category Name:</label>
+                                <label class="mt-2">{{ tt('Category Name:') }}</label>
                                 <input type="text" name="translations[{{ $language->id }}][name]"
                                     class="form-control def_name">
                                 <input type="hidden" name="translations[{{ $language->id }}][language_id]"
                                     value="{{ $language->id }}">
+                                <label class="mt-2">{{ tt('Description:') }}</label>
+                                <textarea name="translations[{{ $language->id }}][description]" class="form-control"
+                                    maxlength="200"></textarea>
                             </div>
                         @endforeach
                     </div>
 
+                    <!-- Common Fields for Category (in Edit Category Modal) -->
+                    <div class="mt-3">
+                        <label>{{ tt('Meta Keyword:') }}</label>
+                        <input type="text" name="meta_keyword" class="form-control" required>
+
+                        <label class="mt-2">{{ tt('URL:') }}</label>
+                        <input type="text" name="url" class="form-control">
+
+                        <label class="mt-2">{{ tt('Category Picture:') }}</label>
+                        <input type="file" name="picture" class="form-control">
+                    </div>
+
+                    <!-- Artworks Selection -->
+                    <label class="mt-2">{{ tt('Artworks:') }}</label>
+                    <select name="artworks[]" class="form-control select2-artwork" multiple>
+                        @foreach($artworks as $artwork)
+                            <option value="{{ $artwork->id }} "
+                                data-img="{{ $artwork->photos ? json_decode($artwork->photos)[0] : '' }}"
+                                data-artist="{{ $artwork->artist->first_name }} {{ $artwork->artist->last_name }}">
+                                {{ $artwork->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
                     <!-- Status Selection (Outside Tabs) -->
-                    <label class="mt-3">Status:</label>
+                    <label class="mt-3">{{ tt('Status:') }}</label>
                     <select name="status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active">{{ tt('Active') }}</option>
+                        <option value="inactive">{{ tt('Inactive') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -199,11 +295,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Preview Category</h5>
+                <h5 class="modal-title">{{ tt('Preview Category') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                Loading...
+                {{ tt('Loading...') }}
             </div>
         </div>
     </div>
@@ -226,21 +322,79 @@
             type: 'GET',
             success: function (response) {
                 let category = response;
-                $('#previewCategoryModal .modal-body').html(`
-                    <h5><strong>Category Name:</strong> ${category.name}</h5>
-                    <p><strong>Status:</strong> ${category.status}</p>
-                `);
+                let translationsHtml = '';
+                if (category.translations && category.translations.length > 0) {
+                    category.translations.forEach(translation => {
+                        translationsHtml += `
+                        <p>
+                            <strong>${translation.language.name}:</strong> ${translation.name} <br>
+                            ${translation.description ? `<em>${translation.description}</em>` : ''}
+                        </p>
+                    `;
+                    });
+                }
+
+                let artworksHtml = '';
+                if (category.artworks && category.artworks.length > 0) {
+                    artworksHtml = '<h6>{{ tt('Artworks:') }}</h6>';
+                    category.artworks.forEach(artwork => {
+                        let imgSrc = artwork.photos ? JSON.parse(artwork.photos)[0] : '';
+                        artworksHtml += `
+                        <div class="d-flex align-items-center">
+                            ${imgSrc ? `<img src="${window.location.origin + '/storage/' + imgSrc}" class="rounded" width="40" height="40" style="margin-right: 10px;">` : ''}
+                            <div>
+                                <strong>${artwork.name}</strong>
+                                <small class="d-block text-muted">{{ tt('Artist:') }} ${artwork.artist.first_name} ${artwork.artist.last_name}</small>
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                // Toggle button for status
+                let toggleBtn = category.status === 'active'
+                    ? `<button onclick="toggleCategoryStatus(${category.id})" class="btn btn-warning">{{ tt('Deactivate') }}</button>`
+                    : `<button onclick="toggleCategoryStatus(${category.id})" class="btn btn-success">{{ tt('Activate') }}</button>`;
+
+                let previewHtml = `
+                <h5><strong>{{ tt('Category Name:') }}</strong> ${category.name}</h5>
+                <p><strong>{{ tt('Status:') }}</strong> ${category.status} ${toggleBtn}</p>
+                <p><strong>{{ tt('Meta Keyword:') }}</strong> ${category.meta_keyword}</p>
+                <p><strong>{{ tt('URL:') }}</strong> ${category.url}</p>
+                <p><strong>{{ tt('Picture:') }}</strong> ${category.picture ? `<img src="${category.picture}" alt="Category Picture" style="max-width: 100px;">` : '{{ tt('No picture available') }}'}</p>
+                ${translationsHtml ? '<h6>{{ tt('Translations:') }}</h6>' + translationsHtml : ''}
+                ${artworksHtml}
+            `;
+
+                $('#previewCategoryModal .modal-body').html(previewHtml);
                 $('#previewCategoryModal').modal('show');
             },
             error: function () {
-                alert('Failed to load category details.');
+                alert('{{ tt('Failed to load category details.') }}');
+            }
+        });
+    }
+
+    function toggleCategoryStatus(categoryId) {
+        $.ajax({
+            url: `/dashboard/categories/${categoryId}/toggle-status`,
+            type: 'POST',
+            data: { _token: '{{ csrf_token() }}' },
+            success: function (response) {
+                if (response.success) {
+                    alert('{{ tt('Category') }} ' + (response.status === 'active' ? '{{ tt('activated') }}' : '{{ tt('deactivated') }}') + ' {{ tt('successfully.') }}');
+                    // Refresh preview details
+                    previewCategory(categoryId);
+                }
+            },
+            error: function () {
+                alert('{{ tt('Failed to toggle category status.') }}');
             }
         });
     }
 
     function confirmDelete(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to delete this category? This action cannot be undone.")) {
+        if (confirm("{{ tt('Are you sure you want to delete this category? This action cannot be undone.') }}")) {
             event.target.closest('form').submit();
         }
     }
@@ -251,19 +405,32 @@
             type: 'GET',
             success: function (response) {
                 let category = response;
+                // Populate common fields
                 $('#editCategoryModal select[name="status"]').val(category.status);
+                $('#editCategoryModal input[name="meta_keyword"]').val(category.meta_keyword);
+                $('#editCategoryModal input[name="url"]').val(category.url);
+                // $('#editCategoryModal input[name="picture"]').val(category.picture);
 
-                // Populate translations
-                $('.def_name').val(category.name);
+                // populate the select2-artwork select tag
+                let selectedArtworks = category.artworks.map(art => art.id);
+                $('.select2-artwork').val(selectedArtworks).trigger('change');
+
+                // Populate translations for each language:
+                // (Assuming each language tab has an input for the category name with a class "def_name"
+                // and a textarea for description with a corresponding naming convention)
                 category.translations.forEach(translation => {
+                    // Set the category name input
                     $(`#editCategoryModal input[name="translations[${translation.language_id}][name]"]`).val(translation.name);
+                    // Set the description textarea
+                    $(`#editCategoryModal textarea[name="translations[${translation.language_id}][description]"]`).val(translation.description);
                 });
 
+                // Set the form action URL
                 $('#editCategoryModal form').attr('action', `/dashboard/categories/${categoryId}`);
                 $('#editCategoryModal').modal('show');
             },
             error: function () {
-                alert('Failed to load category details.');
+                alert('{{ tt('Failed to load category details.') }}');
             }
         });
     }
@@ -278,14 +445,38 @@
             .map(cb => cb.value);
         if (selectedIds.length === 0) {
             e.preventDefault();
-            alert('Select at least one category to delete.');
+            alert('{{ tt('Select at least one category to delete.') }}');
         } else {
             document.getElementById('bulkDeleteIds').value = JSON.stringify(selectedIds);
             console.log(selectedIds);
-            if (confirm('Are you sure you want to delete the selected categories?')) {
+            if (confirm('{{ tt('Are you sure you want to delete the selected categories?') }}')) {
                 this.submit();
             }
         }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        function formatArtworkOption(option) {
+            if (!option.id) return option.text;
+            var imgSrc = $(option.element).data('img');
+            var artist = $(option.element).data('artist');
+            return $(` 
+            <div class="d-flex align-items-center">
+                ${imgSrc ? `<img src="${window.location.origin + '/storage/' + imgSrc}" class="rounded" width="40" height="40" style="margin-right: 10px;">` : ''}
+                <div>
+                    <strong>${option.text}</strong>
+                    <small class="d-block text-muted">${artist}</small>
+                </div>
+            </div>
+        `);
+        }
+
+        $('.select2-artwork').select2({
+            placeholder: "{{ tt('Select Artworks') }}",
+            templateResult: formatArtworkOption,
+            templateSelection: formatArtworkOption
+        });
     });
 </script>
 

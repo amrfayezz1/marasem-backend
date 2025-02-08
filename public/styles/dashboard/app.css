@@ -1,3 +1,7 @@
+html {
+    overflow-x: hidden;
+}
+
 .body {
     display: flex;
     background-color: #FAFAFA;
@@ -56,4 +60,8 @@ h3 {
 
 .pagination-buttons {
     display: flex;
+}
+
+.input-group .select2 {
+    width: 200px !important;
 }

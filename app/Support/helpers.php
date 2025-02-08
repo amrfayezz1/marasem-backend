@@ -3,12 +3,21 @@
 use App\Models\Language;
 use App\Models\StaticTranslation;
 
-if (!function_exists('translate_static')) {
-    function translate_static($token)
+if (!function_exists('tt')) {
+    function tt($token, $lang = '')
     {
-        // Get the current locale
-        $locale = app()->getLocale();
-
+        if ($lang) {
+            $locale = $lang;
+        } else {
+            // Get the current locale
+            if ((auth()->user() && auth()->user()->language) || (auth('sanctum')->user() && auth('sanctum')->user()->language)) {
+                $locale = auth()->user()->language->code;
+            } else {
+                $locale = cookie('locale', 'en');
+                $locale = explode(';', $locale)[0];
+                $locale = explode('=', $locale)[1];
+            }
+        }
         // Find the language by code
         $language = Language::where('code', $locale)->first();
 
@@ -16,22 +25,22 @@ if (!function_exists('translate_static')) {
         if (!$language) {
             return $token;
         }
+        $formattedToken = str_replace(' ', '_', strtolower($token));
 
         // Fetch the translation
-        $translation = StaticTranslation::where('token', $token)
+        $translation = StaticTranslation::where('token', $formattedToken)
             ->where('language_id', $language->id)
             ->first();
 
         if (!$translation) {
             StaticTranslation::firstOrCreate([
-                'token' => $token,
+                'token' => $formattedToken,
                 'language_id' => $language->id,
             ], [
                 'translation' => null, // Set as null for admin to fill later
             ]);
         }
-
         // Return the translation or fallback to the token
-        return $translation ? $translation->translation : $token;
+        return $translation && $translation->translation ? $translation->translation : $token;
     }
 }

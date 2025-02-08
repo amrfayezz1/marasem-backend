@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+@php
+    if (session('locale') || Session::get('locale')) {
+        $locale = session('locale') ?? Session::get('locale');
+    } elseif (isset($_REQUEST['locale']) && $_REQUEST['locale']) {
+        $locale = $_REQUEST['locale'];
+    } else {
+        $locale = 'en';
+    }
+    if ($locale == 'ar') {
+        echo '<style>body {direction: rtl;}</style>';
+    }
+@endphp
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Marasem | Login</title>
+    <title>@yield('title', tt('Marasem', $locale) . ' | ' . tt('Login', $locale))</title>
     <link rel="shortcut icon" href="{{ asset("imgs/logo.png") }}" type="image/x-icon">
     <!-- Default CSS -->
     <div>
@@ -35,26 +47,25 @@
 </head>
 
 <body>
-
     <div class="containers">
         <div class="wrap">
             <div class="head">
                 <img src="{{ asset('imgs/logo.png') }}" alt="Logo" width="50px">
             </div>
             <form method="POST" action="{{ route('admin.signin') }}">
-                <h1>Welcome to Marasem</h1>
+                <h1>{{ tt('Welcome to Marasem', $locale) }}</h1>
                 @csrf
                 @if ($errors->any())
                     <div class="alert alert-danger" role="alert">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                            <li>{{ tt($error, $locale) }}</li>
                         @endforeach
                     </div>
                 @endif
                 <div class="form-floating">
                     <input class="form-control" id="email" type="email" name="email" placeholder=" "
                         value="{{ old('email') }}" required autocomplete="email" autofocus>
-                    <label for="email">Email</label>
+                    <label for="email">{{ tt('Email', $locale) }}</label>
                 </div>
 
                 <div class="input-icon">
@@ -62,10 +73,10 @@
                         <input class="form-control" id="password" type="password" name="password" required
                             placeholder=" " autocomplete="current-password">
                         <i class="fas fa-eye-slash" id="password-icon"></i>
-                        <label for="password">Password</label>
+                        <label for="password">{{ tt('Password', $locale) }}</label>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Sign In</button>
+                <button type="submit" class="btn btn-primary">{{ tt('Sign In', $locale) }}</button>
             </form>
         </div>
         <div class="img">

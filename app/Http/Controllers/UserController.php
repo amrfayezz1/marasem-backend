@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
 use App\Models\User;
 use App\Models\OrderItem;
 use App\Models\Language;
@@ -86,10 +87,13 @@ class UserController extends Controller
         $request->validate([
             'locale' => 'required|string|exists:languages,code',
         ]);
-
+        $language_id = Language::where('code', $request->locale)->first()->id;
         $user = auth()->user();
-        $user->preferred_language = $request->locale;
+        $user->preferred_language = $language_id;
         $user->save();
+        
+        app()->setLocale($request->locale);
+        App::setLocale($request->locale);
 
         return response()->json([
             'message' => 'Locale updated successfully.',

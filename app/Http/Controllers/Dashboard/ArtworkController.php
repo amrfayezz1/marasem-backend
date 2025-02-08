@@ -21,16 +21,18 @@ class ArtworkController extends Controller
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhereHas('collections', function ($q) use ($search) {
-                    $q->where('title', 'LIKE', "%{$search}%");
-                })
-                ->orWhereHas('tags', function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('id', $search) // exact match for ID
+                    ->orWhereHas('collections', function ($q) use ($search) {
+                        $q->where('title', 'LIKE', "%{$search}%");
+                    })
+                    ->orWhereHas('tags', function ($q) use ($search) {
+                        $q->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
         }
 
-        // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('reviewed', $request->status);
         }

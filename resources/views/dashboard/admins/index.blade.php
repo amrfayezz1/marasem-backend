@@ -7,9 +7,9 @@
 @section('content')
 <div class="container bookings">
     <div class="title">
-        <h3>Admins List</h3>
+        <h3>{{ tt('Admins List') }}</h3>
         <button data-bs-toggle="modal" data-bs-target="#addAdminModal" class="btn btn-primary">
-            Add Admin &nbsp; <i class="fa-solid fa-plus"></i>
+            {{ tt('Add Admin') }} &nbsp; <i class="fa-solid fa-plus"></i>
         </button>
     </div>
     <hr>
@@ -19,26 +19,26 @@
         <form method="GET" action="{{ route('dashboard.admins.index') }}" class="mb-3">
             <div class="input-group">
                 @if (isset($_GET['search']))
-                    <a href="{{ route('dashboard.admins.index') }}" class="btn btn-secondary me-0">Reset</a>
+                    <a href="{{ route('dashboard.admins.index') }}" class="btn btn-secondary me-0">{{ tt('Reset') }}</a>
                 @endif
-                <input type="text" name="search" class="form-control" placeholder="Search by Name or Email"
+                <input type="text" name="search" class="form-control" placeholder="{{ tt('Search by Name or Email') }}"
                     value="{{ request('search', '') }}">
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-primary">{{ tt('Search') }}</button>
             </div>
         </form>
     </div>
 
     <!-- Admins Table -->
     @if ($admins->isEmpty())
-        <center class="alert alert-warning">No admins found.</center>
+        <center class="alert alert-warning">{{ tt('No admins found.') }}</center>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Actions</th>
+                    <th>{{ tt('ID') }}</th>
+                    <th>{{ tt('Name') }}</th>
+                    <th>{{ tt('Email') }}</th>
+                    <th>{{ tt('Actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,7 +49,9 @@
                         <td>{{ $admin->email }}</td>
                         <td>
                             <span onclick="editAdmin({{ $admin->id }})"><i class="fa-solid fa-pen-to-square"></i></span>
-                            <span onclick="editPrivileges({{ $admin->id }})"><i class="fa-solid fa-cogs"></i></span>
+                            @if ($admin->is_admin == 1)
+                                <span onclick="editPrivileges({{ $admin->id }})"><i class="fa-solid fa-cogs"></i></span>
+                            @endif
                             <form action="{{ route('dashboard.admins.remove', $admin->id) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
@@ -61,7 +63,34 @@
             </tbody>
         </table>
 
-        {{ $admins->links() }}
+        
+        @if ($admins->hasPages())
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    @if (!$admins->onFirstPage())
+                        <a href="{{ $admins->previousPageUrl() }}" aria-label="Previous">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-left"></i>
+                            </li>
+                        </a>
+                    @endif
+                    @for ($i = 1; $i <= $admins->lastPage(); $i++)
+                        <a href="{{ $admins->url($i) }}">
+                            <li class="page-item {{ $i == $admins->currentPage() ? 'active' : '' }}">
+                                {{ $i }}
+                            </li>
+                        </a>
+                    @endfor
+                    @if ($admins->hasMorePages())
+                        <a href="{{ $admins->nextPageUrl() }}" aria-label="Next">
+                            <li class="page-item arr">
+                                <i class="fas fa-chevron-right"></i>
+                            </li>
+                        </a>
+                    @endif
+                </ul>
+            </nav>
+        @endif
     @endif
 </div>
 
@@ -72,13 +101,13 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Admin</h5>
+                    <h5 class="modal-title">{{ tt('Add Admin') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label>Select Existing User:</label>
+                    <label>{{ tt('Select Existing User') }}:</label>
                     <select name="user_id" class="form-control select2">
-                        <option value="">-- Select User --</option>
+                        <option value="">{{ tt('-- Select User --') }}</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}
                                 ({{ $user->email }})</option>
@@ -86,7 +115,7 @@
                     </select>
 
                     <hr>
-                    <h5>Or Create New Admin</h5>
+                    <h5>{{ tt('Or Create New Admin') }}</h5>
 
                     <!-- Language Tabs -->
                     <ul class="nav nav-tabs" id="adminTabs">
@@ -94,7 +123,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#admin-lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -107,30 +136,30 @@
                                 id="admin-lang-{{ $language->id }}">
                                 <input type="hidden" name="translations[{{ $language->id }}][language_id]"
                                     value="{{ $language->id }}">
-                                <label class="mt-2">First Name:</label>
+                                <label class="mt-2">{{ tt('First Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][first_name]"
                                     class="form-control">
 
-                                <label class="mt-2">Last Name:</label>
+                                <label class="mt-2">{{ tt('Last Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][last_name]" class="form-control">
                             </div>
                         @endforeach
                     </div>
 
-                    <label class="mt-2">Email:</label>
+                    <label class="mt-2">{{ tt('Email') }}:</label>
                     <input type="email" name="email" class="form-control">
 
-                    <label class="mt-2">Password:</label>
+                    <label class="mt-2">{{ tt('Password') }}:</label>
                     <input type="password" name="password" class="form-control">
 
-                    <label class="mt-2">Country Code:</label>
+                    <label class="mt-2">{{ tt('Country Code') }}:</label>
                     <input type="text" name="country_code" class="form-control">
 
-                    <label class="mt-2">Phone:</label>
+                    <label class="mt-2">{{ tt('Phone') }}:</label>
                     <input type="text" name="phone" class="form-control">
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save') }}</button>
                 </div>
             </div>
         </form>
@@ -145,7 +174,7 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Admin</h5>
+                    <h5 class="modal-title">{{ tt('Edit Admin') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -155,7 +184,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab"
                                     href="#edit-admin-lang-{{ $language->id }}">
-                                    {{ $language->name }}
+                                    {{ tt($language->name) }}
                                 </a>
                             </li>
                         @endforeach
@@ -168,21 +197,21 @@
                                 id="edit-admin-lang-{{ $language->id }}">
                                 <input type="hidden" name="translations[{{ $language->id }}][language_id]"
                                     value="{{ $language->id }}">
-                                <label class="mt-2">First Name:</label>
+                                <label class="mt-2">{{ tt('First Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][first_name]"
                                     class="form-control def_name">
 
-                                <label class="mt-2">Last Name:</label>
+                                <label class="mt-2">{{ tt('Last Name') }}:</label>
                                 <input type="text" name="translations[{{ $language->id }}][last_name]"
                                     class="form-control def_last_name">
                             </div>
                         @endforeach
                     </div>
-                    <label>Email:</label>
+                    <label>{{ tt('Email') }}:</label>
                     <input type="email" name="email" class="form-control">
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -197,7 +226,7 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Admin Privileges</h5>
+                    <h5 class="modal-title">{{ tt('Edit Admin Privileges') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -214,7 +243,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">{{ tt('Save Changes') }}</button>
                 </div>
             </div>
         </form>
@@ -227,7 +256,7 @@
 <script>
     function confirmRemove(event) {
         event.preventDefault();
-        if (confirm("Are you sure you want to remove this admin?")) {
+        if (confirm("{{ tt('Are you sure you want to remove this admin?') }}")) {
             event.target.closest('form').submit();
         }
     }

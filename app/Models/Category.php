@@ -9,7 +9,14 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'status', 'description'];
+    protected $fillable = [
+        'name',
+        'status',
+        'description',
+        'meta_keyword',
+        'url',
+        'picture',
+    ];
 
     public function translations()
     {
@@ -22,4 +29,10 @@ class Category extends Model
     {
         return $this->hasMany(Tag::class);
     }
+
+    public function artworks()
+    {
+        return $this->belongsToMany(Artwork::class, 'category_artworks');
+    }
+
 }
